@@ -28,29 +28,66 @@
         <header id="hud" class="hud hidden">
           <div class="hud-top">
             <div class="hud-brand">
-              <span class="hud-brand__eyebrow">Concrete Network</span>
-              <span class="hud-brand__title">Vault Defender</span>
+              <div class="hud-brand__logo">
+                <!-- Inline Concrete logo SVG (stylized concrete slab + vault glyph) -->
+                <svg viewBox="0 0 120 36" class="concrete-logo" role="img" aria-label="Concrete logo">
+                  <defs>
+                    <linearGradient id="g1" x1="0" x2="1">
+                      <stop offset="0" stop-color="#2b2b2b" />
+                      <stop offset="1" stop-color="#0b0b0b" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="0" y="4" width="120" height="28" rx="6" fill="url(#g1)" stroke="#aa8a2b" stroke-opacity="0.9" stroke-width="1.6"/>
+                  <g transform="translate(10,8) scale(0.9)" fill="#ffdf8a">
+                    <circle cx="12" cy="10" r="6" fill="#f3d37a" opacity="0.98" />
+                    <rect x="20" y="6" width="70" height="8" rx="2" fill="#ffd27a" opacity="0.18"/>
+                  </g>
+                  <text x="88" y="23" font-family="Orbitron, sans-serif" font-size="9" fill="#fff6df" letter-spacing="0.06em">CONCRETE</text>
+                </svg>
+              </div>
+              <div class="hud-brand__text">
+                <span class="hud-brand__eyebrow">Concrete Network</span>
+                <span class="hud-brand__title">Vault Defender</span>
+              </div>
+              <div class="hud-brand__mascot" aria-hidden="true">
+                <!-- Simple animated Concrete face mascot (SVG) -->
+                <svg viewBox="0 0 80 80" class="mascot" width="56" height="56">
+                  <defs>
+                    <radialGradient id="eyeGrad" cx="30%" cy="30%">
+                      <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
+                      <stop offset="100%" stop-color="#ffd37a" stop-opacity="0.06"/>
+                    </radialGradient>
+                  </defs>
+                  <rect x="6" y="6" width="68" height="68" rx="10" fill="#0b0b0b" stroke="#d9b86b" stroke-width="2" />
+                  <g transform="translate(8,10)">
+                    <circle cx="18" cy="18" r="8" fill="url(#eyeGrad)" class="mascot-eye-left" />
+                    <circle cx="46" cy="18" r="8" fill="url(#eyeGrad)" class="mascot-eye-right" />
+                    <rect x="20" y="38" width="28" height="6" rx="3" fill="#2b2b2b" stroke="#c58f35" stroke-width="1" />
+                    <path d="M10 28 q26 14 52 0" stroke="#ffd37a" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
+                  </g>
+                </svg>
+              </div>
             </div>
 
             <div class="hud-stats">
               <div class="stat-card">
-                <span class="stat-label">Score</span>
+                <span class="stat-label">Capital Optimization</span>
                 <strong id="scoreValue">0</strong>
               </div>
               <div class="stat-card">
-                <span class="stat-label">Level</span>
+                <span class="stat-label">Vault Efficiency</span>
                 <strong id="levelValue">1</strong>
               </div>
               <div class="stat-card">
-                <span class="stat-label">Pressure</span>
+                <span class="stat-label">Risk Level</span>
                 <strong id="pressureValue">0%</strong>
               </div>
               <div class="stat-card">
-                <span class="stat-label">Combo</span>
+                <span class="stat-label">System Integrity</span>
                 <strong id="comboValue">0x</strong>
               </div>
-                <div class="stat-card">
-                <span class="stat-label">Vault Stability</span>
+              <div class="stat-card">
+                <span class="stat-label">Yield Stability</span>
                 <strong id="stabilityValue">100%</strong>
               </div>
             </div>
@@ -65,6 +102,30 @@
             </div>
           </div>
         </header>
+
+        <!-- Floating financial-style HUD -->
+        <div class="floating-hud" aria-hidden="true">
+          <div class="floating-card">
+            <span class="label">Yield Stability</span>
+            <strong id="yieldValue" class="value">100%</strong>
+          </div>
+          <div class="floating-card">
+            <span class="label">Vault Efficiency</span>
+            <strong id="efficiencyValue" class="value">1</strong>
+          </div>
+          <div class="floating-card">
+            <span class="label">Capital Optimization</span>
+            <strong id="optimizationValue" class="value">0</strong>
+          </div>
+          <div class="floating-card">
+            <span class="label">Risk Level</span>
+            <strong id="riskValue" class="value">0%</strong>
+          </div>
+          <div class="floating-card">
+            <span class="label">System Integrity</span>
+            <strong id="integrityValue" class="value">0x</strong>
+          </div>
+        </div>
 
         <main id="mainMenu" class="menu-overlay">
           <section class="menu-card">
@@ -101,13 +162,13 @@
               <p class="modal-kicker">How To Play</p>
               <button class="icon-button close-modal" data-close="howToModal" aria-label="Close how to play dialog">×</button>
             </div>
-            <h2>Lock the grid, match the bubbles, and keep the vault stable.</h2>
+            <h2>Lock the grid, match the bubbles, and maintain Yield Stability.</h2>
             <ul class="instruction-list">
               <li>Move your pointer to aim the launcher.</li>
               <li>Click or tap to fire the current bubble.</li>
               <li>Match 3 or more bubbles of the same color to clear them.</li>
               <li>Disconnected bubbles fall away for bonus score.</li>
-              <li>Every few turns, pressure rows descend. Survive the stack.</li>
+              <li>Every few turns, pressure rows descend. Manage Risk Level to survive the stack.</li>
             </ul>
           </div>
         </section>

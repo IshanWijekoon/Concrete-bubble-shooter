@@ -1053,6 +1053,13 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.hud?.setStability(stability);
     this.hud?.setHighScore(Math.max(this.highScore, getHighScore()));
     this.syncNextPreview();
+
+    // Mirror core metrics into the branded floating HUD elements
+    this.hud?.setYield?.(stability);
+    this.hud?.setEfficiency?.(this.level);
+    this.hud?.setOptimization?.(this.score);
+    this.hud?.setRisk?.(pressure);
+    this.hud?.setIntegrity?.(this.comboChain);
   }
 
   calculateVaultStability(pressure) {
@@ -1110,6 +1117,11 @@ function buildUiBridge() {
   const comboValue = document.getElementById('comboValue');
   const stabilityValue = document.getElementById('stabilityValue');
   const nextBubblePreview = document.getElementById('nextBubblePreview');
+  const yieldValue = document.getElementById('yieldValue');
+  const efficiencyValue = document.getElementById('efficiencyValue');
+  const optimizationValue = document.getElementById('optimizationValue');
+  const riskValue = document.getElementById('riskValue');
+  const integrityValue = document.getElementById('integrityValue');
   const hud = document.getElementById('hud');
   const mainMenu = document.getElementById('mainMenu');
   const howToModal = document.getElementById('howToModal');
@@ -1155,6 +1167,21 @@ function buildUiBridge() {
       nextBubblePreview.style.background = `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.58), transparent 33%), radial-gradient(circle at 68% 74%, ${hexToRgba(rimColor, 0.24)}, transparent 58%), linear-gradient(180deg, ${hexToCss(color)}, ${colorKey === 'premium' ? '#0d0d11' : '#674714'})`;
       nextBubblePreview.style.borderColor = hexToRgba(rimColor, 0.36);
       nextBubblePreview.style.boxShadow = `0 0 18px ${hexToRgba(rimColor, 0.28)}, inset 0 2px 8px rgba(255, 255, 255, 0.3), inset 0 -10px 18px rgba(0, 0, 0, 0.18)`;
+    },
+    setYield(value) {
+      if (yieldValue) yieldValue.textContent = `${value}%`;
+    },
+    setEfficiency(value) {
+      if (efficiencyValue) efficiencyValue.textContent = String(value);
+    },
+    setOptimization(value) {
+      if (optimizationValue) optimizationValue.textContent = String(value);
+    },
+    setRisk(value) {
+      if (riskValue) riskValue.textContent = `${value}%`;
+    },
+    setIntegrity(value) {
+      if (integrityValue) integrityValue.textContent = value > 0 ? `${value}x` : '0x';
     },
     setHighScore() {
       // The persistent high score is handled inside the scene; the menu uses the live scoreboard only.
@@ -1268,6 +1295,11 @@ function buildUiBridge() {
   ui.setCombo(0);
   ui.setStability(100);
   ui.setNextColor('concrete');
+  ui.setYield?.(100);
+  ui.setEfficiency?.(1);
+  ui.setOptimization?.(0);
+  ui.setRisk?.(0);
+  ui.setIntegrity?.(0);
   return ui;
 }
 

@@ -417,6 +417,95 @@ button {
   justify-self: center;
 }
 
+/* Logo + Mascot */
+.hud-brand__logo {
+  display: block;
+  align-self: center;
+  justify-self: start;
+  margin-bottom: 2px;
+}
+
+.concrete-logo {
+  width: 132px;
+  height: auto;
+  filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));
+}
+
+.hud-brand__text {
+  display: grid;
+}
+
+.hud-brand__mascot {
+  justify-self: end;
+  align-self: center;
+  width: 56px;
+  height: 56px;
+  margin-left: 6px;
+}
+
+.mascot { transform-origin: 50% 50%; }
+.mascot-eye-left, .mascot-eye-right { transform-origin: center; }
+.mascot-eye-left, .mascot-eye-right {
+  animation: mascot-eye 2200ms ease-in-out infinite;
+}
+
+@keyframes mascot-eye {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  50% { transform: translateY(1.8px) scaleY(0.98); opacity: 0.95; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Floating financial HUD (minimal, futuristic) */
+.floating-hud {
+  position: absolute;
+  right: 12px;
+  top: 18%;
+  display: grid;
+  gap: 10px;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.floating-card {
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(12,12,14,0.62), rgba(10,10,12,0.34));
+  border: 1px solid rgba(255,215,94,0.12);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255,200,80,0.02) inset;
+  backdrop-filter: blur(8px);
+  color: var(--text);
+  transform: translateZ(0);
+  pointer-events: none;
+}
+
+.floating-card .label { display:block; font-size:0.64rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.12em; }
+.floating-card .value { display:block; margin-top:4px; font-family: 'Orbitron', sans-serif; font-size:1rem; color:var(--gold-bright); text-shadow: 0 0 12px rgba(243,211,122,0.12);} 
+
+.floating-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 8px 30px rgba(255, 200, 80, 0.04) inset;
+  pointer-events: none;
+}
+
+/* Cinematic lighting accent for the whole app shell */
+#app-shell::before {
+  content: '';
+  position: absolute;
+  inset: -20% -10% -20% -10%;
+  background: radial-gradient(40% 30% at 10% 8%, rgba(243,211,122,0.06), transparent 8%), radial-gradient(50% 40% at 92% 88%, rgba(255,255,255,0.02), transparent 12%);
+  pointer-events: none;
+  z-index: 3;
+  mix-blend-mode: screen;
+}
+
+/* Premium black/gold button accent */
+.primary-button { box-shadow: 0 16px 44px rgba(0,0,0,0.6), 0 0 18px rgba(255,215,94,0.08); }
+
+
 .hud-brand__eyebrow {
   color: var(--gold);
   text-transform: uppercase;
