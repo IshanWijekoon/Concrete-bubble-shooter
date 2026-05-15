@@ -33,6 +33,37 @@ const MOBILE_STAGE_HEIGHT = 844;
 
 const COLOR_KEYS = Object.keys(COLORS);
 
+const POWER_UP_CONFIG = {
+  autoCompound: {
+    label: 'Auto Compound',
+    color: 0x7be7ff,
+    duration: 7000,
+    cooldown: 12000,
+  },
+  liquidityBoost: {
+    label: 'Liquidity Boost',
+    color: 0x8bf0c5,
+    duration: 8500,
+    cooldown: 13500,
+  },
+  riskShield: {
+    label: 'Risk Shield',
+    color: 0x9ad0ff,
+  },
+  capitalSurge: {
+    label: 'Capital Surge',
+    color: 0xffdf84,
+    duration: 6500,
+    cooldown: 11000,
+  },
+  institutionalMode: {
+    label: 'Institutional Mode',
+    color: 0xd9b86b,
+    duration: 9500,
+    cooldown: 15000,
+  },
+};
+
 const DEFAULT_SETTINGS = {
   sound: true,
   aimGuide: true,
@@ -178,6 +209,13 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.bubbles = [];
     this.overlayMessage = null;
     this.shakeStrength = 0;
+    this.powerUps = {
+      autoCompound: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      liquidityBoost: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      riskShield: { charges: 1 },
+      capitalSurge: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      institutionalMode: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+    };
   }
 
   preload() {
@@ -227,6 +265,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.aimGraphics = this.add.graphics();
     this.targetGraphics = this.add.graphics();
     this.flashGraphics = this.add.graphics();
+    this.powerPulseGraphics = this.add.graphics();
     this.statusText = this.add.text(0, 0, '', {
       fontFamily: 'Orbitron, sans-serif',
       fontSize: '26px',
@@ -385,12 +424,13 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.comboChain = 0;
     this.turnCleared = false;
     this.vaultStability = 100;
-    this.shotsUntilPressure = 6;
+    this.shotsUntilPressure = 7;
     this.shotsTaken = 0;
     this.projectile = null;
     this.projectileVelocity.set(0, 0);
     this.state = 'playing';
     this.shakeStrength = 0;
+    this.resetPowerUps();
     this.clearBoard();
     this.spawnOpeningWave();
     this.nextColor = pickColor(this.level);
@@ -412,6 +452,17 @@ class ConcreteVaultScene extends Phaser.Scene {
       this.projectileSprite.destroy();
       this.projectileSprite = null;
     }
+  }
+
+  resetPowerUps() {
+    this.powerUps = {
+      autoCompound: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      liquidityBoost: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      riskShield: { charges: 1 },
+      capitalSurge: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+      institutionalMode: { meter: 0, activeUntil: 0, cooldownUntil: 0 },
+    };
+    this.syncPowerUpHud();
   }
 
   spawnOpeningWave() {
@@ -602,6 +653,8 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   update(time, delta) {
+    this.updatePowerUps(time, delta);
+
     if (this.state !== 'playing') {
       this.drawAimGuide(time);
       this.drawTargetPulse(time);
@@ -686,6 +739,11 @@ class ConcreteVaultScene extends Phaser.Scene {
 
     const targetCell = this.pickAttachmentCell(x, y, collisionBubble);
     if (!targetCell) {
+      if (this.absorbFailedShot()) {
+        this.syncHud();
+        return;
+      }
+
       this.failRun();
       return;
     }
@@ -794,7 +852,9 @@ class ConcreteVaultScene extends Phaser.Scene {
 
   popGroup(group) {
     const pulse = group.length;
-    this.score += pulse * 12 + Math.max(0, pulse - 3) * 4;
+    const capitalMultiplier = this.isPowerUpActive('capitalSurge') ? 2 : 1;
+    const comboMultiplier = 1 + Math.min(this.comboChain + 1, 8) * 0.14;
+    this.score += Math.round((pulse * 12 + Math.max(0, pulse - 3) * 4) * capitalMultiplier * comboMultiplier);
     this.audio?.pop(pulse);
     this.shakeStrength = Math.min(12, this.shakeStrength + 4 + pulse * 0.25);
     this.turnCleared = true;
@@ -811,6 +871,15 @@ class ConcreteVaultScene extends Phaser.Scene {
         onComplete: () => bubble.sprite.destroy(),
       });
     });
+
+    this.gainPowerUpMeter('autoCompound', pulse * 12);
+    this.gainPowerUpMeter('capitalSurge', pulse * 10 + this.comboChain * 5);
+    this.gainPowerUpMeter('liquidityBoost', 8);
+    this.gainPowerUpMeter('institutionalMode', this.vaultStability < 60 ? 14 : 6);
+    this.triggerAutoCompound(group);
+    if (pulse >= 4) {
+      this.powerUps.riskShield.charges = Math.min(2, this.powerUps.riskShield.charges + 1);
+    }
 
     this.syncHud();
     this.flashGraphics.fillStyle(0xf3d37a, 0.06);
@@ -858,6 +927,8 @@ class ConcreteVaultScene extends Phaser.Scene {
 
     this.turnCleared = true;
     this.audio?.drop();
+    this.gainPowerUpMeter('autoCompound', detached.length * 8);
+    this.gainPowerUpMeter('liquidityBoost', 6);
     detached.forEach((bubble) => {
       this.grid[bubble.row][bubble.col] = null;
       this.bubbles = this.bubbles.filter((item) => item !== bubble);
@@ -878,15 +949,21 @@ class ConcreteVaultScene extends Phaser.Scene {
   afterTurn() {
     this.comboChain = this.turnCleared ? Math.min(99, this.comboChain + 1) : 0;
     this.turnCleared = false;
-    this.shotsUntilPressure -= 1;
+    this.shotsUntilPressure -= this.getPressureDrainPerTurn();
     if (this.score >= this.level * 180) {
       this.level += 1;
-      this.shotsUntilPressure = Math.max(4, 6 - Math.floor(this.level / 3));
+      this.shotsUntilPressure = Math.max(this.getPressureThreshold() - 1, this.getPressureThreshold() - Math.floor(this.level / 3));
+      this.powerUps.riskShield.charges = Math.min(2, this.powerUps.riskShield.charges + 1);
+      this.gainPowerUpMeter('institutionalMode', 18);
+      this.gainPowerUpMeter('capitalSurge', 12);
       this.showStatus(`LEVEL ${this.level}`, 900);
     }
 
     if (this.isBoardEmpty()) {
       this.showStatus('WAVE CLEARED', 900);
+      this.powerUps.riskShield.charges = 1;
+      this.gainPowerUpMeter('autoCompound', 18);
+      this.gainPowerUpMeter('institutionalMode', 12);
       this.time.delayedCall(520, () => {
         if (this.state === 'playing') {
           this.spawnOpeningWave();
@@ -898,11 +975,15 @@ class ConcreteVaultScene extends Phaser.Scene {
       });
     }
 
-    if (this.shotsUntilPressure <= 0) {
-      this.shotsUntilPressure = Math.max(4, 7 - Math.floor(this.level / 2));
+    if (this.isPowerUpActive('institutionalMode') && this.shotsUntilPressure <= 0) {
+      this.shotsUntilPressure = this.getPressureThreshold();
+    } else if (this.shotsUntilPressure <= 0) {
+      this.shotsUntilPressure = this.getPressureThreshold();
       this.pushPressureRow();
     }
 
+    this.gainPowerUpMeter('liquidityBoost', this.shotsUntilPressure <= 2 ? 12 : 6);
+    this.gainPowerUpMeter('autoCompound', this.comboChain > 0 ? 4 : 0);
     this.syncHud();
   }
 
@@ -911,6 +992,11 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   pushPressureRow() {
+    if (this.isPowerUpActive('institutionalMode')) {
+      this.showStatus('INSTITUTIONAL MODE STABILIZED THE BOARD', 900);
+      return;
+    }
+
     if (this.grid[this.rows - 1].some(Boolean)) {
       this.failRun();
       return;
@@ -938,11 +1024,18 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.grid = nextGrid;
     this.relayoutBubbles();
     this.audio?.tone({ frequency: 210, duration: 0.11, type: 'triangle', gain: 0.05, bend: -30 });
+    this.gainPowerUpMeter('liquidityBoost', 16);
+    this.gainPowerUpMeter('institutionalMode', 10);
     this.showStatus('PRESSURE RISE', 700);
   }
 
   failRun() {
     if (this.state === 'gameover') {
+      return;
+    }
+
+    if (this.absorbFailedShot()) {
+      this.syncHud();
       return;
     }
 
@@ -1043,7 +1136,8 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   syncHud() {
-    const pressure = clamp(Math.round(((7 - this.shotsUntilPressure) / 7) * 100), 0, 100);
+    const pressureThreshold = this.getPressureThreshold();
+    const pressure = clamp(Math.round(((pressureThreshold - this.shotsUntilPressure) / pressureThreshold) * 100), 0, 100);
     const stability = this.calculateVaultStability(pressure);
     this.vaultStability = stability;
     this.hud?.setScore(this.score);
@@ -1053,6 +1147,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.hud?.setStability(stability);
     this.hud?.setHighScore(Math.max(this.highScore, getHighScore()));
     this.syncNextPreview();
+    this.syncPowerUpHud();
 
     // Mirror core metrics into the branded floating HUD elements
     this.hud?.setYield?.(stability);
@@ -1065,7 +1160,224 @@ class ConcreteVaultScene extends Phaser.Scene {
   calculateVaultStability(pressure) {
     const highestOccupiedRow = this.bubbles.reduce((highest, bubble) => Math.max(highest, bubble.row), -1);
     const stackRisk = highestOccupiedRow >= 0 ? Math.round(((highestOccupiedRow + 1) / this.rows) * 48) : 0;
-    return clamp(100 - Math.round(pressure * 0.55) - stackRisk, 0, 100);
+    const institutionalBuffer = this.isPowerUpActive('institutionalMode') ? 14 : 0;
+    const shieldBuffer = this.powerUps.riskShield.charges > 0 ? 8 : 0;
+    return clamp(100 - Math.round(pressure * 0.55) - stackRisk + institutionalBuffer + shieldBuffer, 0, 100);
+  }
+
+  getPressureThreshold() {
+    let threshold = 7;
+    if (this.isPowerUpActive('liquidityBoost')) {
+      threshold += 3;
+    }
+
+    if (this.isPowerUpActive('institutionalMode')) {
+      threshold += 4;
+    }
+
+    return threshold;
+  }
+
+  getPressureDrainPerTurn() {
+    if (this.isPowerUpActive('institutionalMode')) {
+      return 0;
+    }
+
+    if (this.isPowerUpActive('liquidityBoost')) {
+      return 0.45;
+    }
+
+    return 1;
+  }
+
+  isPowerUpActive(name, time = this.time.now) {
+    const powerUp = this.powerUps[name];
+    return Boolean(powerUp && powerUp.activeUntil && powerUp.activeUntil > time);
+  }
+
+  gainPowerUpMeter(name, amount) {
+    const config = POWER_UP_CONFIG[name];
+    const powerUp = this.powerUps[name];
+    if (!config || !powerUp || typeof powerUp.meter !== 'number' || amount <= 0) {
+      return;
+    }
+
+    if (this.isPowerUpActive(name)) {
+      return;
+    }
+
+    const now = this.time.now;
+    if (powerUp.cooldownUntil && powerUp.cooldownUntil > now) {
+      powerUp.meter = clamp(powerUp.meter + amount * 0.34, 0, 99.5);
+      return;
+    }
+
+    powerUp.meter = clamp(powerUp.meter + amount, 0, 100);
+    if (powerUp.meter >= 100) {
+      this.activatePowerUp(name);
+    }
+  }
+
+  activatePowerUp(name) {
+    const config = POWER_UP_CONFIG[name];
+    const powerUp = this.powerUps[name];
+    if (!config || !powerUp || typeof powerUp.meter !== 'number') {
+      return;
+    }
+
+    const now = this.time.now;
+    if (powerUp.cooldownUntil && powerUp.cooldownUntil > now) {
+      return;
+    }
+
+    powerUp.meter = 0;
+    powerUp.activeUntil = now + config.duration;
+    powerUp.cooldownUntil = now + config.cooldown;
+    this.cameras.main.flash(
+      180,
+      (config.color >> 16) & 255,
+      (config.color >> 8) & 255,
+      config.color & 255,
+    );
+    this.cameras.main.shake(120, name === 'institutionalMode' ? 0.004 : 0.006);
+    this.audio?.tone({
+      frequency: name === 'capitalSurge' ? 760 : name === 'institutionalMode' ? 320 : 560,
+      duration: 0.2,
+      type: 'sine',
+      gain: 0.085,
+      bend: name === 'liquidityBoost' ? 100 : -24,
+    });
+
+    const activationMessages = {
+      autoCompound: 'AUTO COMPOUND ONLINE',
+      liquidityBoost: 'LIQUIDITY BOOST ENGAGED',
+      capitalSurge: 'CAPITAL SURGE x2',
+      institutionalMode: 'INSTITUTIONAL MODE STABLE',
+    };
+
+    this.showStatus(activationMessages[name] ?? config.label.toUpperCase(), 1000);
+  }
+
+  updatePowerUps(time) {
+    let changed = false;
+    Object.entries(POWER_UP_CONFIG).forEach(([name, config]) => {
+      const powerUp = this.powerUps[name];
+      if (!powerUp || typeof powerUp.meter !== 'number') {
+        return;
+      }
+
+      if (powerUp.activeUntil && powerUp.activeUntil <= time) {
+        powerUp.activeUntil = 0;
+        changed = true;
+        this.showStatus(`${config.label.toUpperCase()} OFFLINE`, 700);
+      }
+
+      if (powerUp.cooldownUntil && powerUp.cooldownUntil <= time) {
+        powerUp.cooldownUntil = 0;
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      this.syncPowerUpHud();
+    }
+  }
+
+  syncPowerUpHud() {
+    const now = this.time?.now ?? 0;
+    const snapshot = (name) => {
+      const config = POWER_UP_CONFIG[name];
+      const powerUp = this.powerUps[name];
+      if (!config || !powerUp) {
+        return null;
+      }
+
+      if (name === 'riskShield') {
+        const armed = powerUp.charges > 0;
+        return {
+          state: armed ? 'armed' : 'recharging',
+          fill: armed ? 100 : 0,
+          detail: armed ? `${powerUp.charges} CHARGE` : '0 CHARGE',
+        };
+      }
+
+      const active = powerUp.activeUntil > now;
+      const cooling = !active && powerUp.cooldownUntil > now;
+      const fill = active ? Math.round(((powerUp.activeUntil - now) / config.duration) * 100) : Math.round(powerUp.meter);
+
+      return {
+        state: active ? 'active' : cooling ? 'cooldown' : 'ready',
+        fill: clamp(fill, 0, 100),
+        detail: active
+          ? `${Math.ceil((powerUp.activeUntil - now) / 1000)}S`
+          : cooling
+            ? 'COOLDOWN'
+            : `${Math.round(powerUp.meter)}%`,
+      };
+    };
+
+    Object.keys(POWER_UP_CONFIG).forEach((name) => {
+      this.hud?.setPowerUpState?.(name, {
+        label: POWER_UP_CONFIG[name].label,
+        accent: hexToCss(POWER_UP_CONFIG[name].color),
+        ...snapshot(name),
+      });
+    });
+  }
+
+  triggerAutoCompound(group) {
+    if (!this.isPowerUpActive('autoCompound')) {
+      return;
+    }
+
+    const targets = new Set();
+    group.forEach((bubble) => {
+      this.getNeighbors(bubble.row, bubble.col).forEach((cell) => {
+        const neighbor = this.grid[cell.row][cell.col];
+        if (neighbor && !group.includes(neighbor)) {
+          targets.add(neighbor);
+        }
+      });
+    });
+
+    if (targets.size === 0) {
+      return;
+    }
+
+    const compoundTargets = Array.from(targets).slice(0, 10);
+    this.audio?.tone({ frequency: 820, duration: 0.16, type: 'triangle', gain: 0.06, bend: 120 });
+    this.flashGraphics.fillStyle(0x8befff, 0.08);
+    this.flashGraphics.fillCircle(this.scale.width / 2, this.scale.height / 2, 220);
+
+    compoundTargets.forEach((bubble, index) => {
+      this.grid[bubble.row][bubble.col] = null;
+      this.bubbles = this.bubbles.filter((item) => item !== bubble);
+      this.tweens.add({
+        targets: bubble.sprite,
+        scale: bubble.sprite.scale * 1.3,
+        alpha: 0,
+        delay: index * 30,
+        duration: 180,
+        ease: 'Sine.easeOut',
+        onComplete: () => bubble.sprite.destroy(),
+      });
+      this.score += 8;
+    });
+
+    this.gainPowerUpMeter('autoCompound', compoundTargets.length * 4);
+  }
+
+  absorbFailedShot() {
+    if (!this.projectile || this.powerUps.riskShield.charges <= 0) {
+      return false;
+    }
+
+    this.powerUps.riskShield.charges -= 1;
+    this.audio?.tone({ frequency: 220, duration: 0.14, type: 'sine', gain: 0.06, bend: 90 });
+    this.cameras.main.flash(150, 0x9a, 0xd0, 0xff);
+    this.showStatus('RISK SHIELD ABSORBED THE FAILED SHOT', 980);
+    this.destroyProjectile();
+    return true;
   }
 
   syncNextPreview() {
@@ -1122,6 +1434,13 @@ function buildUiBridge() {
   const optimizationValue = document.getElementById('optimizationValue');
   const riskValue = document.getElementById('riskValue');
   const integrityValue = document.getElementById('integrityValue');
+  const powerCards = {
+    autoCompound: document.getElementById('powerAutoCompound'),
+    liquidityBoost: document.getElementById('powerLiquidityBoost'),
+    riskShield: document.getElementById('powerRiskShield'),
+    capitalSurge: document.getElementById('powerCapitalSurge'),
+    institutionalMode: document.getElementById('powerInstitutionalMode'),
+  };
   const hud = document.getElementById('hud');
   const mainMenu = document.getElementById('mainMenu');
   const howToModal = document.getElementById('howToModal');
@@ -1182,6 +1501,23 @@ function buildUiBridge() {
     },
     setIntegrity(value) {
       if (integrityValue) integrityValue.textContent = value > 0 ? `${value}x` : '0x';
+    },
+    setPowerUpState(name, snapshot) {
+      const card = powerCards[name];
+      if (!card || !snapshot) {
+        return;
+      }
+
+      card.dataset.state = snapshot.state ?? 'ready';
+      card.style.setProperty('--power-fill', `${snapshot.fill ?? 0}%`);
+      if (snapshot.accent) {
+        card.style.setProperty('--power-accent', snapshot.accent);
+      }
+
+      const status = card.querySelector('.power-status');
+      if (status) {
+        status.textContent = snapshot.detail ?? snapshot.label ?? '';
+      }
     },
     setHighScore() {
       // The persistent high score is handled inside the scene; the menu uses the live scoreboard only.
@@ -1300,6 +1636,11 @@ function buildUiBridge() {
   ui.setOptimization?.(0);
   ui.setRisk?.(0);
   ui.setIntegrity?.(0);
+  ui.setPowerUpState?.('autoCompound', { state: 'ready', fill: 0, detail: '0%' });
+  ui.setPowerUpState?.('liquidityBoost', { state: 'ready', fill: 0, detail: '0%' });
+  ui.setPowerUpState?.('riskShield', { state: 'armed', fill: 100, detail: '1 CHARGE' });
+  ui.setPowerUpState?.('capitalSurge', { state: 'ready', fill: 0, detail: '0%' });
+  ui.setPowerUpState?.('institutionalMode', { state: 'ready', fill: 0, detail: '0%' });
   return ui;
 }
 
