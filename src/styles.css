@@ -194,8 +194,8 @@ button {
 .menu-card,
 .modal-card {
   position: relative;
-  width: calc(100% - 24px);
-  max-width: 390px;
+  width: calc(100% - 16px);
+  max-width: 414px;
   border-radius: 24px;
   background:
     linear-gradient(180deg, rgba(26, 23, 19, 0.95), rgba(10, 10, 12, 0.9)),
@@ -211,8 +211,10 @@ button {
 
 .menu-card {
   display: grid;
-  gap: 18px;
-  padding: 22px 18px;
+  justify-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 24px 20px 22px;
   animation: cardRise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -238,17 +240,35 @@ button {
   font-weight: 700;
 }
 
-.menu-card h1 {
+.menu-title {
   margin: 0;
   font-family: 'Orbitron', sans-serif;
-  font-size: clamp(2.2rem, 11vw, 4rem);
-  line-height: 0.84;
-  letter-spacing: 0.08em;
+  display: grid;
+  gap: 0.02em;
+  max-width: 100%;
+  font-size: clamp(1.85rem, 8.6vw, 2.75rem);
+  line-height: 0.94;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #fff7e1;
+  text-wrap: balance;
+  overflow: hidden;
   text-shadow:
     0 0 24px rgba(243, 211, 122, 0.22),
     0 0 60px rgba(255, 215, 94, 0.12);
+}
+
+.menu-title span {
+  display: block;
+}
+
+.menu-title span:nth-child(2) {
+  letter-spacing: 0.08em;
+}
+
+.menu-title span:last-child {
+  font-size: 0.88em;
+  letter-spacing: 0.09em;
 }
 
 .menu-subtitle,
@@ -261,17 +281,20 @@ button {
 
 .menu-subtitle {
   margin: 0;
-  font-size: clamp(1rem, 4.5vw, 1.25rem);
-  letter-spacing: 0.14em;
+  max-width: 14ch;
+  font-size: clamp(0.96rem, 3.8vw, 1.12rem);
+  line-height: 1.2;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: rgba(246, 241, 227, 0.8);
 }
 
 .menu-actions {
   display: flex;
-  flex-wrap: wrap;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
 }
 
 .menu-actions--compact {
@@ -283,12 +306,17 @@ button {
 .icon-button {
   border: 0;
   border-radius: 999px;
-  min-height: 48px;
-  padding: 0 22px;
-  letter-spacing: 0.08em;
+  min-height: 44px;
+  padding: 0 18px;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   font-weight: 700;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.primary-button,
+.secondary-button {
+  width: min(100%, 274px);
 }
 
 .primary-button {
@@ -317,6 +345,13 @@ button {
   outline: none;
 }
 
+.primary-button:active,
+.secondary-button:active,
+.icon-button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 10px 22px rgba(255, 205, 87, 0.12);
+}
+
 .menu-readout {
   display: grid;
   grid-template-columns: 1fr;
@@ -327,13 +362,15 @@ button {
 
 .menu-readout div {
   display: grid;
-  gap: 5px;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
 }
 
 .menu-readout strong,
 .game-over-score {
-  font-size: 0.96rem;
-  letter-spacing: 0.03em;
+  font-size: 0.92rem;
+  letter-spacing: 0.025em;
 }
 
 .hud {
@@ -621,17 +658,17 @@ canvas {
 @media (max-width: 430px) {
   .menu-card,
   .modal-card {
-    width: calc(100% - 18px);
-    max-width: 392px;
-    padding: 18px 16px;
+    width: calc(100% - 12px);
+    max-width: 402px;
+    padding: 20px 16px 18px;
   }
 
-  .menu-card h1 {
-    font-size: clamp(2rem, 12vw, 3.35rem);
+  .menu-title {
+    font-size: clamp(1.75rem, 9.4vw, 2.55rem);
   }
 
   .menu-subtitle {
-    font-size: 0.96rem;
+    font-size: 0.94rem;
   }
 
   .primary-button,
