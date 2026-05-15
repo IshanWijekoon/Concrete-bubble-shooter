@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./src/styles.css" />
+    <meta
+      name="description"
+      content="Concrete Vault Defender - a premium Phaser bubble shooter set inside a futuristic DeFi fortress."
+    />
+    <meta name="theme-color" content="#050505" />
+    <title>Concrete Vault Defender</title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <div id="app-shell">
+      <div class="background-layers" aria-hidden="true">
+        <div class="gradient-sheen gradient-sheen--left"></div>
+        <div class="gradient-sheen gradient-sheen--right"></div>
+        <div class="gradient-sheen gradient-sheen--top"></div>
+        <div class="concrete-grain"></div>
+        <div id="particle-layer"></div>
+      </div>
+
+      <div id="game-root" aria-label="Concrete Vault Defender game canvas"></div>
+
+      <div id="ui-layer">
+        <header id="hud" class="hud hidden">
+          <div class="hud-brand">
+            <span class="hud-brand__eyebrow">Concrete Network</span>
+            <span class="hud-brand__title">Vault Defender</span>
+          </div>
+
+          <div class="hud-stats">
+            <div class="stat-card">
+              <span class="stat-label">Score</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Level</span>
+              <strong id="levelValue">1</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Pressure</span>
+              <strong id="pressureValue">0%</strong>
+            </div>
+          </div>
+
+          <div class="hud-preview">
+            <span class="stat-label">Next Shot</span>
+            <div id="nextBubblePreview" class="next-bubble" aria-hidden="true"></div>
+          </div>
+        </header>
+
+        <main id="mainMenu" class="menu-overlay">
+          <section class="menu-card">
+            <p class="menu-kicker">Institutional Cyber Defense Protocol</p>
+            <h1>CONCRETE VAULT DEFENDER</h1>
+            <p class="menu-subtitle">Build Systems. Stay Solid.</p>
+
+            <div class="menu-actions">
+              <button id="playButton" class="primary-button">Play</button>
+              <button id="howToButton" class="secondary-button">How To Play</button>
+              <button id="settingsButton" class="secondary-button">Settings</button>
+            </div>
+
+            <div class="menu-readout">
+              <div>
+                <span class="stat-label">Mode</span>
+                <strong>Bubble Shooter / Match Shooter</strong>
+              </div>
+              <div>
+                <span class="stat-label">Aesthetic</span>
+                <strong>Black Steel. Gold Circuitry.</strong>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <section id="howToModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-header">
+              <p class="modal-kicker">How To Play</p>
+              <button class="icon-button close-modal" data-close="howToModal" aria-label="Close how to play dialog">×</button>
+            </div>
+            <h2>Lock the grid, match the bubbles, and keep the vault stable.</h2>
+            <ul class="instruction-list">
+              <li>Move your pointer to aim the launcher.</li>
+              <li>Click or tap to fire the current bubble.</li>
+              <li>Match 3 or more bubbles of the same color to clear them.</li>
+              <li>Disconnected bubbles fall away for bonus score.</li>
+              <li>Every few turns, pressure rows descend. Survive the stack.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="settingsModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card">
+            <div class="modal-header">
+              <p class="modal-kicker">Settings</p>
+              <button class="icon-button close-modal" data-close="settingsModal" aria-label="Close settings dialog">×</button>
+            </div>
+            <h2>Premium controls for a premium vault.</h2>
+            <div class="settings-grid">
+              <label class="toggle-row">
+                <span>
+                  <strong>Sound FX</strong>
+                  <small>Precision tones for shots, pops, and failure states.</small>
+                </span>
+                <input id="soundToggle" type="checkbox" />
+                <span class="toggle-pill" aria-hidden="true"></span>
+              </label>
+
+              <label class="toggle-row">
+                <span>
+                  <strong>Aim Guide</strong>
+                  <small>Show the projected aim beam.</small>
+                </span>
+                <input id="aimGuideToggle" type="checkbox" />
+                <span class="toggle-pill" aria-hidden="true"></span>
+              </label>
+
+              <label class="toggle-row">
+                <span>
+                  <strong>Motion</strong>
+                  <small>Keep atmospheric UI animations active.</small>
+                </span>
+                <input id="motionToggle" type="checkbox" />
+                <span class="toggle-pill" aria-hidden="true"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section id="gameOverModal" class="modal hidden" aria-hidden="true">
+          <div class="modal-card game-over-card">
+            <p class="modal-kicker">Vault Breached</p>
+            <h2>Stability lost. Rebuild the wall and try again.</h2>
+            <p id="finalScoreText" class="game-over-score">Final Score: 0</p>
+            <div class="menu-actions menu-actions--compact">
+              <button id="restartButton" class="primary-button">Play Again</button>
+              <button id="menuButton" class="secondary-button">Back to Menu</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
