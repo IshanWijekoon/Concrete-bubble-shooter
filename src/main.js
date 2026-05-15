@@ -137,6 +137,9 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.nextColor = 'jade';
     this.score = 0;
     this.level = 1;
+    this.comboChain = 0;
+    this.turnCleared = false;
+    this.vaultStability = 100;
     this.highScore = getHighScore();
     this.shotsUntilPressure = 6;
     this.shotsTaken = 0;
@@ -271,9 +274,9 @@ class ConcreteVaultScene extends Phaser.Scene {
       diameter: radius * 2,
       rowHeight: Math.max(Math.floor(radius * 1.72), radius * 2 - 6),
       left: Math.round((width - ((this.columns * radius * 2) + radius)) / 2),
-      top: Math.max(132, Math.round(height * 0.17)),
-      bottom: height - 190,
-      shooterY: height - 110,
+      top: Math.max(106, Math.round(height * 0.13)),
+      bottom: height - Math.max(142, Math.round(height * 0.14)),
+      shooterY: height - Math.max(100, Math.round(height * 0.08)),
       shooterX: Math.round(width / 2),
     };
 
@@ -296,6 +299,9 @@ class ConcreteVaultScene extends Phaser.Scene {
   resetGame(fullReset = false) {
     this.score = 0;
     this.level = 1;
+    this.comboChain = 0;
+    this.turnCleared = false;
+    this.vaultStability = 100;
     this.shotsUntilPressure = 6;
     this.shotsTaken = 0;
     this.projectile = null;
@@ -496,6 +502,7 @@ class ConcreteVaultScene extends Phaser.Scene {
       radius: this.board.radius,
     };
 
+    this.turnCleared = false;
     this.projectileVelocity = this.aimDirection.clone().scale(this.projectileSpeed());
     this.audio?.shoot();
     this.shotsTaken += 1;
@@ -702,6 +709,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.score += pulse * 12 + Math.max(0, pulse - 3) * 4;
     this.audio?.pop(pulse);
     this.shakeStrength = Math.min(12, this.shakeStrength + 4 + pulse * 0.25);
+    this.turnCleared = true;
 
     group.forEach((bubble) => {
       this.grid[bubble.row][bubble.col] = null;
@@ -760,6 +768,7 @@ class ConcreteVaultScene extends Phaser.Scene {
       return;
     }
 
+    this.turnCleared = true;
     this.audio?.drop();
     detached.forEach((bubble) => {
       this.grid[bubble.row][bubble.col] = null;
@@ -779,6 +788,8 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   afterTurn() {
+    this.comboChain = this.turnCleared ? Math.min(99, this.comboChain + 1) : 0;
+    this.turnCleared = false;
     this.shotsUntilPressure -= 1;
     if (this.score >= this.level * 180) {
       this.level += 1;
@@ -873,9 +884,11 @@ class ConcreteVaultScene extends Phaser.Scene {
     const segmentLength = Math.max(this.scale.height, this.scale.width);
     const end = this.projectAim(origin, direction, segmentLength);
 
-    this.aimGraphics.lineStyle(4, 0xf3d37a, 0.25);
+    this.aimGraphics.lineStyle(5, 0xf3d37a, 0.06);
     this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
-    this.aimGraphics.lineStyle(2, 0xfff0ba, 0.7);
+    this.aimGraphics.lineStyle(2, 0xf3d37a, 0.22);
+    this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
+    this.aimGraphics.lineStyle(1, 0xfff0ba, 0.58);
     this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
     this.aimGraphics.fillStyle(0xffdf84, 0.5);
     this.aimGraphics.fillCircle(end.x, end.y, 4);
@@ -917,11 +930,21 @@ class ConcreteVaultScene extends Phaser.Scene {
 
   syncHud() {
     const pressure = clamp(Math.round(((7 - this.shotsUntilPressure) / 7) * 100), 0, 100);
+    const stability = this.calculateVaultStability(pressure);
+    this.vaultStability = stability;
     this.hud?.setScore(this.score);
     this.hud?.setLevel(this.level);
     this.hud?.setPressure(pressure);
+    this.hud?.setCombo(this.comboChain);
+    this.hud?.setStability(stability);
     this.hud?.setHighScore(Math.max(this.highScore, getHighScore()));
     this.syncNextPreview();
+  }
+
+  calculateVaultStability(pressure) {
+    const highestOccupiedRow = this.bubbles.reduce((highest, bubble) => Math.max(highest, bubble.row), -1);
+    const stackRisk = highestOccupiedRow >= 0 ? Math.round(((highestOccupiedRow + 1) / this.rows) * 48) : 0;
+    return clamp(100 - Math.round(pressure * 0.55) - stackRisk, 0, 100);
   }
 
   syncNextPreview() {
@@ -970,6 +993,8 @@ function buildUiBridge() {
   const scoreValue = document.getElementById('scoreValue');
   const levelValue = document.getElementById('levelValue');
   const pressureValue = document.getElementById('pressureValue');
+  const comboValue = document.getElementById('comboValue');
+  const stabilityValue = document.getElementById('stabilityValue');
   const nextBubblePreview = document.getElementById('nextBubblePreview');
   const hud = document.getElementById('hud');
   const mainMenu = document.getElementById('mainMenu');
@@ -1003,6 +1028,12 @@ function buildUiBridge() {
     },
     setPressure(value) {
       pressureValue.textContent = `${value}%`;
+    },
+    setCombo(value) {
+      comboValue.textContent = value > 0 ? `${value}x` : '0x';
+    },
+    setStability(value) {
+      stabilityValue.textContent = `${value}%`;
     },
     setNextColor(colorKey) {
       const color = COLORS[colorKey] ?? COLORS.gold;
@@ -1118,6 +1149,8 @@ function buildUiBridge() {
   ui.setScore(0);
   ui.setLevel(1);
   ui.setPressure(0);
+  ui.setCombo(0);
+  ui.setStability(100);
   ui.setNextColor('gold');
   return ui;
 }

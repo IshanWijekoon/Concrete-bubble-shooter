@@ -26,29 +26,43 @@
 
       <div id="ui-layer">
         <header id="hud" class="hud hidden">
-          <div class="hud-brand">
-            <span class="hud-brand__eyebrow">Concrete Network</span>
-            <span class="hud-brand__title">Vault Defender</span>
+          <div class="hud-top">
+            <div class="hud-brand">
+              <span class="hud-brand__eyebrow">Concrete Network</span>
+              <span class="hud-brand__title">Vault Defender</span>
+            </div>
+
+            <div class="hud-stats">
+              <div class="stat-card">
+                <span class="stat-label">Score</span>
+                <strong id="scoreValue">0</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Level</span>
+                <strong id="levelValue">1</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Pressure</span>
+                <strong id="pressureValue">0%</strong>
+              </div>
+              <div class="stat-card">
+                <span class="stat-label">Combo</span>
+                <strong id="comboValue">0x</strong>
+              </div>
+                <div class="stat-card">
+                <span class="stat-label">Vault Stability</span>
+                <strong id="stabilityValue">100%</strong>
+              </div>
+            </div>
           </div>
 
-          <div class="hud-stats">
-            <div class="stat-card">
-              <span class="stat-label">Score</span>
-              <strong id="scoreValue">0</strong>
+          <div class="hud-bottom">
+            <div class="next-shot-panel">
+              <span class="stat-label">Next Shot</span>
+              <div class="next-shot-orb-shell" aria-hidden="true">
+                <div id="nextBubblePreview" class="next-bubble"></div>
+              </div>
             </div>
-            <div class="stat-card">
-              <span class="stat-label">Level</span>
-              <strong id="levelValue">1</strong>
-            </div>
-            <div class="stat-card">
-              <span class="stat-label">Pressure</span>
-              <strong id="pressureValue">0%</strong>
-            </div>
-          </div>
-
-          <div class="hud-preview">
-            <span class="stat-label">Next Shot</span>
-            <div id="nextBubblePreview" class="next-bubble" aria-hidden="true"></div>
           </div>
         </header>
 
