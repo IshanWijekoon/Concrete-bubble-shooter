@@ -4,12 +4,29 @@ const STORAGE_KEY = 'concrete-vault-defender-settings';
 const SCORE_KEY = 'concrete-vault-defender-high-score';
 
 const COLORS = {
-  amber: 0xf2c35a,
-  gold: 0xffdd86,
-  jade: 0x5ccf9c,
-  cyan: 0x63d8ff,
-  steel: 0x9aa7bf,
+  gold: 0xffd46b,
+  gray: 0x9ca4b2,
+  black: 0x1d1d22,
+  amber: 0xf4ad4f,
+  metallic: 0xa6b9d1,
 };
+
+const ORB_VARIANTS = {
+  gold: ['vault-orb', 'capital-node'],
+  gray: ['capital-node-gray'],
+  black: ['shield-core'],
+  amber: ['yield-rocket'],
+  metallic: ['reserve-sphere'],
+};
+
+const PHOTO_ASSETS = [
+  ['photo-vault', './photo_1_2026-05-15_19-53-42.jpg'],
+  ['photo-capital', './photo_2_2026-05-15_19-53-42.jpg'],
+  ['photo-shield', './photo_3_2026-05-15_19-53-42.jpg'],
+  ['photo-yield', './photo_4_2026-05-15_19-53-42.jpg'],
+  ['photo-capital-alt', './photo_5_2026-05-15_19-53-42.jpg'],
+  ['photo-reserve', './photo_6_2026-05-15_19-53-42.jpg'],
+];
 
 const MOBILE_STAGE_WIDTH = 390;
 const MOBILE_STAGE_HEIGHT = 844;
@@ -48,6 +65,11 @@ function setHighScore(score) {
 function pickColor(level = 1) {
   const bias = level > 4 ? COLOR_KEYS : COLOR_KEYS.slice(0, 4);
   return bias[Math.floor(Math.random() * bias.length)];
+}
+
+function pickVariantKey(colorKey) {
+  const variants = ORB_VARIANTS[colorKey] ?? ORB_VARIANTS.gold;
+  return variants[Math.floor(Math.random() * variants.length)];
 }
 
 function hexToCss(hex) {
@@ -155,10 +177,13 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   preload() {
-    this.createTextures();
+    PHOTO_ASSETS.forEach(([key, path]) => {
+      this.load.image(key, path);
+    });
   }
 
   create() {
+    this.createTextures();
     this.hud = window.concreteVaultUI;
     this.audio = window.concreteVaultAudio;
     this.motionEnabled = window.concreteVaultSettings.motion;
@@ -222,30 +247,68 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   createTextures() {
-    const bubbleRadius = 22;
-    const textureSize = 64;
+    const makeOrbTexture = (textureKey, sourceKey, colorKey) => {
+      const source = this.textures.get(sourceKey)?.getSourceImage?.();
+      if (!source) {
+        return;
+      }
 
-    const makeTexture = (key, baseColor) => {
-      const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-      graphics.fillStyle(0x000000, 0);
-      graphics.fillRect(0, 0, textureSize, textureSize);
-      graphics.fillStyle(baseColor, 1);
-      graphics.fillCircle(textureSize / 2, textureSize / 2, bubbleRadius);
-      graphics.fillStyle(0xffffff, 0.28);
-      graphics.fillCircle(textureSize * 0.38, textureSize * 0.34, bubbleRadius * 0.44);
-      graphics.fillStyle(0xffffff, 0.08);
-      graphics.fillCircle(textureSize / 2, textureSize / 2, bubbleRadius * 0.98);
-      graphics.lineStyle(3, 0xffffff, 0.08);
-      graphics.strokeCircle(textureSize / 2, textureSize / 2, bubbleRadius - 1);
-      graphics.generateTexture(key, textureSize, textureSize);
-      graphics.destroy();
+      const textureSize = 96;
+      const canvasTexture = this.textures.createCanvas(textureKey, textureSize, textureSize);
+      const context = canvasTexture.getContext();
+      context.clearRect(0, 0, textureSize, textureSize);
+
+      const center = textureSize / 2;
+      const radius = textureSize * 0.38;
+      context.save();
+      context.beginPath();
+      context.arc(center, center, radius, 0, Math.PI * 2);
+      context.closePath();
+      context.clip();
+
+      const coverScale = Math.max(textureSize / source.width, textureSize / source.height);
+      const drawWidth = source.width * coverScale;
+      const drawHeight = source.height * coverScale;
+      context.drawImage(source, (textureSize - drawWidth) / 2, (textureSize - drawHeight) / 2, drawWidth, drawHeight);
+      context.restore();
+
+      const gradient = context.createRadialGradient(center * 0.78, center * 0.72, textureSize * 0.08, center, center, radius);
+      gradient.addColorStop(0, 'rgba(255,255,255,0.52)');
+      gradient.addColorStop(0.45, 'rgba(255,255,255,0.08)');
+      gradient.addColorStop(1, 'rgba(0,0,0,0.35)');
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, textureSize, textureSize);
+
+      context.beginPath();
+      context.arc(center, center, radius, 0, Math.PI * 2);
+      context.closePath();
+      context.lineWidth = 4;
+      context.strokeStyle = 'rgba(255,255,255,0.28)';
+      context.stroke();
+
+      context.beginPath();
+      context.arc(center * 0.82, center * 0.74, radius * 0.45, Math.PI * 1.1, Math.PI * 1.7);
+      context.lineWidth = 6;
+      context.strokeStyle = 'rgba(255,255,255,0.20)';
+      context.stroke();
+
+      context.beginPath();
+      context.arc(center, center, radius + 3, 0, Math.PI * 2);
+      context.lineWidth = 6;
+      context.strokeStyle = `${hexToCss(COLORS[colorKey])}55`;
+      context.shadowColor = hexToCss(COLORS[colorKey]);
+      context.shadowBlur = 18;
+      context.stroke();
+
+      canvasTexture.refresh();
     };
 
-    makeTexture('bubble-gold', COLORS.gold);
-    makeTexture('bubble-amber', COLORS.amber);
-    makeTexture('bubble-jade', COLORS.jade);
-    makeTexture('bubble-cyan', COLORS.cyan);
-    makeTexture('bubble-steel', COLORS.steel);
+    makeOrbTexture('vault-orb', 'photo-vault', 'gold');
+    makeOrbTexture('capital-node', 'photo-capital-alt', 'gold');
+    makeOrbTexture('capital-node-gray', 'photo-capital', 'gray');
+    makeOrbTexture('shield-core', 'photo-shield', 'black');
+    makeOrbTexture('yield-rocket', 'photo-yield', 'amber');
+    makeOrbTexture('reserve-sphere', 'photo-reserve', 'metallic');
 
     const orb = this.make.graphics({ x: 0, y: 0, add: false });
     orb.fillStyle(0xffffff, 1);
@@ -344,11 +407,13 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   spawnBubble(row, col, colorKey) {
+    const skinKey = pickVariantKey(colorKey);
     const bubble = {
       row,
       col,
       colorKey,
-      sprite: this.add.image(0, 0, `bubble-${colorKey}`),
+      skinKey,
+      sprite: this.add.image(0, 0, skinKey),
       scale: this.board.radius / 22,
       moving: false,
     };
@@ -356,8 +421,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     bubble.sprite.setOrigin(0.5);
     bubble.sprite.setScale(bubble.scale);
     bubble.sprite.setDepth(2);
-    bubble.sprite.setTint(COLORS[colorKey]);
-    bubble.sprite.setBlendMode(Phaser.BlendModes.ADD);
+    bubble.sprite.setBlendMode(Phaser.BlendModes.SCREEN);
     this.grid[row][col] = bubble;
     this.bubbles.push(bubble);
     this.placeBubble(bubble);
@@ -490,11 +554,10 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     const scale = this.board.radius / 22;
-    this.projectileSprite = this.add.image(this.launcher.x, this.launcher.y, `bubble-${this.currentColor}`)
+    this.projectileSprite = this.add.image(this.launcher.x, this.launcher.y, pickVariantKey(this.currentColor))
       .setScale(scale)
       .setDepth(3)
-      .setTint(COLORS[this.currentColor])
-      .setBlendMode(Phaser.BlendModes.ADD);
+      .setBlendMode(Phaser.BlendModes.SCREEN);
 
     this.projectile = {
       sprite: this.projectileSprite,
