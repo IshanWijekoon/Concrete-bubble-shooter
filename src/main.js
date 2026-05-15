@@ -4,19 +4,19 @@ const STORAGE_KEY = 'concrete-vault-defender-settings';
 const SCORE_KEY = 'concrete-vault-defender-high-score';
 
 const COLORS = {
-  gold: 0xffd46b,
-  gray: 0x9ca4b2,
-  black: 0x1d1d22,
-  amber: 0xf4ad4f,
-  metallic: 0xa6b9d1,
+  stablecoin: 0x5d9fff,
+  concrete: 0xf3d37a,
+  volatility: 0xf25e5e,
+  security: 0x9ca4b2,
+  premium: 0x1d1d22,
 };
 
 const ORB_VARIANTS = {
-  gold: ['vault-orb', 'capital-node'],
-  gray: ['capital-node-gray'],
-  black: ['shield-core'],
-  amber: ['yield-rocket'],
-  metallic: ['reserve-sphere'],
+  stablecoin: ['reserve-sphere'],
+  concrete: ['vault-orb', 'capital-node'],
+  volatility: ['yield-rocket'],
+  security: ['capital-node-gray'],
+  premium: ['shield-core'],
 };
 
 const PHOTO_ASSETS = [
@@ -68,12 +68,16 @@ function pickColor(level = 1) {
 }
 
 function pickVariantKey(colorKey) {
-  const variants = ORB_VARIANTS[colorKey] ?? ORB_VARIANTS.gold;
+  const variants = ORB_VARIANTS[colorKey] ?? ORB_VARIANTS.concrete;
   return variants[Math.floor(Math.random() * variants.length)];
 }
 
 function hexToCss(hex) {
   return `#${hex.toString(16).padStart(6, '0')}`;
+}
+
+function hexToRgba(hex, alpha) {
+  return `rgba(${(hex >> 16) & 255}, ${(hex >> 8) & 255}, ${hex & 255}, ${alpha})`;
 }
 
 class AudioEngine {
@@ -155,8 +159,8 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.projectileVelocity = new Phaser.Math.Vector2(0, 0);
     this.aimDirection = new Phaser.Math.Vector2(0, -1);
     this.launcher = { x: 0, y: 0 };
-    this.currentColor = 'gold';
-    this.nextColor = 'jade';
+    this.currentColor = 'concrete';
+    this.nextColor = 'stablecoin';
     this.score = 0;
     this.level = 1;
     this.comboChain = 0;
@@ -193,20 +197,20 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.particles = this.add.particles(0, 0, 'spark', {
       x: { min: 0, max: this.scale.width },
       y: { min: 0, max: this.scale.height },
-      scale: { start: 0.34, end: 0.02 },
-      alpha: { start: 0.28, end: 0 },
-      lifespan: 6200,
+      scale: { start: 0.28, end: 0.02 },
+      alpha: { start: 0.14, end: 0 },
+      lifespan: 4200,
       speedY: { min: -8, max: -28 },
       speedX: { min: -10, max: 10 },
       quantity: 1,
-      frequency: 220,
+      frequency: 320,
       tint: [0xf3d37a, 0x9aa7bf, 0xffffff],
-      blendMode: 'ADD',
+      blendMode: Phaser.BlendModes.SCREEN,
     });
 
     this.ambientOrbs = this.add.group();
     for (let index = 0; index < 6; index += 1) {
-      const orb = this.add.image(0, 0, 'orb').setAlpha(0.18).setBlendMode(Phaser.BlendModes.SCREEN);
+      const orb = this.add.image(0, 0, 'orb').setAlpha(0.08).setBlendMode(Phaser.BlendModes.MULTIPLY);
       orb.setTint(index % 2 === 0 ? 0xf3d37a : 0x9aa7bf);
       this.tweens.add({
         targets: orb,
@@ -221,6 +225,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     this.aimGraphics = this.add.graphics();
+    this.targetGraphics = this.add.graphics();
     this.flashGraphics = this.add.graphics();
     this.statusText = this.add.text(0, 0, '', {
       fontFamily: 'Orbitron, sans-serif',
@@ -253,67 +258,81 @@ class ConcreteVaultScene extends Phaser.Scene {
         return;
       }
 
-      const textureSize = 96;
+      const textureSize = 112;
       const canvasTexture = this.textures.createCanvas(textureKey, textureSize, textureSize);
       const context = canvasTexture.getContext();
       context.clearRect(0, 0, textureSize, textureSize);
 
       const center = textureSize / 2;
-      const radius = textureSize * 0.38;
+      const radius = textureSize * 0.34;
       context.save();
       context.beginPath();
       context.arc(center, center, radius, 0, Math.PI * 2);
       context.closePath();
       context.clip();
 
-      const coverScale = Math.max(textureSize / source.width, textureSize / source.height);
+      const coverScale = Math.max((textureSize * 0.9) / source.width, (textureSize * 0.9) / source.height);
       const drawWidth = source.width * coverScale;
       const drawHeight = source.height * coverScale;
+      context.filter = 'saturate(0.76) contrast(0.9) brightness(0.94)';
       context.drawImage(source, (textureSize - drawWidth) / 2, (textureSize - drawHeight) / 2, drawWidth, drawHeight);
+      context.filter = 'none';
       context.restore();
 
-      const gradient = context.createRadialGradient(center * 0.78, center * 0.72, textureSize * 0.08, center, center, radius);
-      gradient.addColorStop(0, 'rgba(255,255,255,0.52)');
-      gradient.addColorStop(0.45, 'rgba(255,255,255,0.08)');
-      gradient.addColorStop(1, 'rgba(0,0,0,0.35)');
-      context.fillStyle = gradient;
+      context.globalCompositeOperation = 'source-atop';
+      const wash = context.createRadialGradient(center * 0.74, center * 0.68, textureSize * 0.1, center, center, radius);
+      wash.addColorStop(0, 'rgba(255,255,255,0.18)');
+      wash.addColorStop(0.42, hexToRgba(COLORS[colorKey], colorKey === 'premium' ? 0.06 : 0.14));
+      wash.addColorStop(1, hexToRgba(colorKey === 'premium' ? 0x0c0c10 : 0x000000, 0.34));
+      context.fillStyle = wash;
       context.fillRect(0, 0, textureSize, textureSize);
+      context.globalCompositeOperation = 'source-over';
 
       context.beginPath();
       context.arc(center, center, radius, 0, Math.PI * 2);
       context.closePath();
       context.lineWidth = 4;
-      context.strokeStyle = 'rgba(255,255,255,0.28)';
+      context.strokeStyle = hexToRgba(COLORS[colorKey], colorKey === 'premium' ? 0.22 : 0.14);
       context.stroke();
 
       context.beginPath();
       context.arc(center * 0.82, center * 0.74, radius * 0.45, Math.PI * 1.1, Math.PI * 1.7);
-      context.lineWidth = 6;
-      context.strokeStyle = 'rgba(255,255,255,0.20)';
+      context.lineWidth = 5;
+      context.strokeStyle = 'rgba(255,255,255,0.08)';
       context.stroke();
 
       context.beginPath();
       context.arc(center, center, radius + 3, 0, Math.PI * 2);
+      context.lineWidth = 5;
+      context.strokeStyle = colorKey === 'premium' ? 'rgba(255, 214, 109, 0.38)' : hexToRgba(COLORS[colorKey], 0.28);
+      context.stroke();
+
+      context.beginPath();
+      context.arc(center, center, radius + 6, 0, Math.PI * 2);
       context.lineWidth = 6;
-      context.strokeStyle = `${hexToCss(COLORS[colorKey])}55`;
-      context.shadowColor = hexToCss(COLORS[colorKey]);
-      context.shadowBlur = 18;
+      context.strokeStyle = 'rgba(0,0,0,0.58)';
+      context.stroke();
+
+      context.beginPath();
+      context.arc(center, center, radius - 1, 0, Math.PI * 2);
+      context.lineWidth = 1.5;
+      context.strokeStyle = 'rgba(255,255,255,0.12)';
       context.stroke();
 
       canvasTexture.refresh();
     };
 
-    makeOrbTexture('vault-orb', 'photo-vault', 'gold');
-    makeOrbTexture('capital-node', 'photo-capital-alt', 'gold');
-    makeOrbTexture('capital-node-gray', 'photo-capital', 'gray');
-    makeOrbTexture('shield-core', 'photo-shield', 'black');
-    makeOrbTexture('yield-rocket', 'photo-yield', 'amber');
-    makeOrbTexture('reserve-sphere', 'photo-reserve', 'metallic');
+    makeOrbTexture('vault-orb', 'photo-vault', 'concrete');
+    makeOrbTexture('capital-node', 'photo-capital-alt', 'concrete');
+    makeOrbTexture('capital-node-gray', 'photo-capital', 'security');
+    makeOrbTexture('shield-core', 'photo-shield', 'premium');
+    makeOrbTexture('yield-rocket', 'photo-yield', 'volatility');
+    makeOrbTexture('reserve-sphere', 'photo-reserve', 'stablecoin');
 
     const orb = this.make.graphics({ x: 0, y: 0, add: false });
     orb.fillStyle(0xffffff, 1);
     orb.fillCircle(64, 64, 24);
-    orb.fillStyle(0xf3d37a, 0.18);
+    orb.fillStyle(0xf3d37a, 0.08);
     orb.fillCircle(64, 64, 48);
     orb.generateTexture('orb', 128, 128);
     orb.destroy();
@@ -334,8 +353,9 @@ class ConcreteVaultScene extends Phaser.Scene {
       width,
       height,
       radius,
+      bubbleScale: radius / 39,
       diameter: radius * 2,
-      rowHeight: Math.max(Math.floor(radius * 1.72), radius * 2 - 6),
+      rowHeight: Math.max(Math.floor(radius * 1.92), radius * 2 + 1),
       left: Math.round((width - ((this.columns * radius * 2) + radius)) / 2),
       top: Math.max(106, Math.round(height * 0.13)),
       bottom: height - Math.max(142, Math.round(height * 0.14)),
@@ -414,14 +434,14 @@ class ConcreteVaultScene extends Phaser.Scene {
       colorKey,
       skinKey,
       sprite: this.add.image(0, 0, skinKey),
-      scale: this.board.radius / 22,
+      scale: this.board.bubbleScale,
       moving: false,
     };
 
     bubble.sprite.setOrigin(0.5);
     bubble.sprite.setScale(bubble.scale);
     bubble.sprite.setDepth(2);
-    bubble.sprite.setBlendMode(Phaser.BlendModes.SCREEN);
+    bubble.sprite.setBlendMode(Phaser.BlendModes.NORMAL);
     this.grid[row][col] = bubble;
     this.bubbles.push(bubble);
     this.placeBubble(bubble);
@@ -431,13 +451,13 @@ class ConcreteVaultScene extends Phaser.Scene {
   placeBubble(bubble) {
     const position = this.cellToWorld(bubble.row, bubble.col);
     bubble.sprite.setPosition(position.x, position.y);
-    bubble.sprite.setScale(this.board.radius / 22);
+    bubble.sprite.setScale(this.board.bubbleScale);
   }
 
   redrawProjectile() {
     if (this.projectileSprite && this.projectile) {
       this.projectileSprite.setPosition(this.projectile.sprite.x, this.projectile.sprite.y);
-      this.projectileSprite.setScale(this.board.radius / 22);
+      this.projectileSprite.setScale(this.board.bubbleScale);
     }
   }
 
@@ -557,7 +577,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.projectileSprite = this.add.image(this.launcher.x, this.launcher.y, pickVariantKey(this.currentColor))
       .setScale(scale)
       .setDepth(3)
-      .setBlendMode(Phaser.BlendModes.SCREEN);
+      .setBlendMode(Phaser.BlendModes.NORMAL);
 
     this.projectile = {
       sprite: this.projectileSprite,
@@ -583,11 +603,13 @@ class ConcreteVaultScene extends Phaser.Scene {
 
   update(time, delta) {
     if (this.state !== 'playing') {
-      this.drawAimGuide();
+      this.drawAimGuide(time);
+      this.drawTargetPulse(time);
       return;
     }
 
     this.flashGraphics.clear();
+    this.targetGraphics.clear();
 
     if (this.projectile) {
       const step = delta / 1000;
@@ -612,17 +634,20 @@ class ConcreteVaultScene extends Phaser.Scene {
 
       if (sprite.y <= topLimit) {
         this.lockProjectileToGrid(sprite.x, sprite.y);
+        this.drawTargetPulse(time);
         return;
       }
 
       const hitBubble = this.findCollisionBubble(sprite.x, sprite.y, radius * 1.92);
       if (hitBubble) {
         this.lockProjectileToGrid(sprite.x, sprite.y, hitBubble);
+        this.drawTargetPulse(time);
       }
     }
 
     this.updateCameraMotion(delta);
-    this.drawAimGuide();
+    this.drawAimGuide(time);
+    this.drawTargetPulse(time);
   }
 
   updateCameraMotion(delta) {
@@ -666,7 +691,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     const bubble = this.spawnBubble(targetCell.row, targetCell.col, this.projectile.colorKey);
-    bubble.sprite.setScale(this.board.radius / 22);
+    bubble.sprite.setScale(this.board.bubbleScale);
     bubble.sprite.setAlpha(0.98);
     bubble.sprite.setPosition(this.projectile.sprite.x, this.projectile.sprite.y);
     this.tweens.add({
@@ -788,7 +813,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     });
 
     this.syncHud();
-    this.flashGraphics.fillStyle(0xf3d37a, 0.12);
+    this.flashGraphics.fillStyle(0xf3d37a, 0.06);
     this.flashGraphics.fillCircle(this.scale.width / 2, this.scale.height / 2, 180);
   }
 
@@ -932,11 +957,11 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   emitWallFlash(x, y) {
-    this.flashGraphics.fillStyle(0xffdd86, 0.08);
+    this.flashGraphics.fillStyle(0xffdd86, 0.04);
     this.flashGraphics.fillCircle(x, y, 28);
   }
 
-  drawAimGuide() {
+  drawAimGuide(time = this.time.now) {
     this.aimGraphics.clear();
     if (this.state !== 'playing' || this.projectile || !this.aimGuideEnabled) {
       return;
@@ -946,15 +971,41 @@ class ConcreteVaultScene extends Phaser.Scene {
     const direction = this.aimDirection.clone();
     const segmentLength = Math.max(this.scale.height, this.scale.width);
     const end = this.projectAim(origin, direction, segmentLength);
+    const targetCell = this.worldToCell(end.x, end.y);
+    const impactPoint = this.cellToWorld(targetCell.row, targetCell.col);
+    const pulse = 0.5 + Math.sin(time * 0.0075) * 0.5;
+    const impactRadius = this.board.radius * (0.72 + pulse * 0.1);
 
-    this.aimGraphics.lineStyle(5, 0xf3d37a, 0.06);
+    this.aimGraphics.lineStyle(5, 0xf3d37a, 0.05);
     this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
-    this.aimGraphics.lineStyle(2, 0xf3d37a, 0.22);
+    this.aimGraphics.lineStyle(2, 0xf3d37a, 0.2);
     this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
-    this.aimGraphics.lineStyle(1, 0xfff0ba, 0.58);
+    this.aimGraphics.lineStyle(1, 0xfff0ba, 0.55);
     this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
-    this.aimGraphics.fillStyle(0xffdf84, 0.5);
-    this.aimGraphics.fillCircle(end.x, end.y, 4);
+    this.aimGraphics.fillStyle(0xffdf84, 0.18 + pulse * 0.08);
+    this.aimGraphics.fillCircle(impactPoint.x, impactPoint.y, impactRadius * 0.82);
+    this.aimGraphics.lineStyle(2, 0xffdf84, 0.36 + pulse * 0.18);
+    this.aimGraphics.strokeCircle(impactPoint.x, impactPoint.y, impactRadius);
+    this.aimGraphics.fillStyle(0xfff5c8, 0.58);
+    this.aimGraphics.fillCircle(end.x, end.y, 4 + pulse * 1.3);
+  }
+
+  drawTargetPulse(time = this.time.now) {
+    this.targetGraphics.clear();
+    if (this.state !== 'playing' || !this.projectile?.sprite) {
+      return;
+    }
+
+    const sprite = this.projectile.sprite;
+    const pulse = 0.5 + Math.sin(time * 0.0085) * 0.5;
+    const radius = this.board.radius * (0.62 + pulse * 0.08);
+
+    this.targetGraphics.fillStyle(0xf3d37a, 0.08 + pulse * 0.06);
+    this.targetGraphics.fillCircle(sprite.x, sprite.y, radius * 1.25);
+    this.targetGraphics.lineStyle(2, 0xfff0ba, 0.12 + pulse * 0.1);
+    this.targetGraphics.strokeCircle(sprite.x, sprite.y, radius * 1.1);
+    this.targetGraphics.fillStyle(0xfff7dc, 0.18 + pulse * 0.08);
+    this.targetGraphics.fillCircle(sprite.x, sprite.y, radius * 0.44);
   }
 
   projectAim(origin, direction, maxDistance) {
@@ -1099,9 +1150,11 @@ function buildUiBridge() {
       stabilityValue.textContent = `${value}%`;
     },
     setNextColor(colorKey) {
-      const color = COLORS[colorKey] ?? COLORS.gold;
-      nextBubblePreview.style.background = `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.55), transparent 33%), linear-gradient(180deg, ${hexToCss(color)}, rgba(98, 70, 18, 0.96))`;
-      nextBubblePreview.style.boxShadow = `0 0 22px rgba(255, 215, 94, 0.34), inset 0 2px 8px rgba(255, 255, 255, 0.34), inset 0 -10px 18px rgba(0, 0, 0, 0.18)`;
+      const color = COLORS[colorKey] ?? COLORS.concrete;
+      const rimColor = colorKey === 'premium' ? 0xd8b76a : color;
+      nextBubblePreview.style.background = `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.58), transparent 33%), radial-gradient(circle at 68% 74%, ${hexToRgba(rimColor, 0.24)}, transparent 58%), linear-gradient(180deg, ${hexToCss(color)}, ${colorKey === 'premium' ? '#0d0d11' : '#674714'})`;
+      nextBubblePreview.style.borderColor = hexToRgba(rimColor, 0.36);
+      nextBubblePreview.style.boxShadow = `0 0 18px ${hexToRgba(rimColor, 0.28)}, inset 0 2px 8px rgba(255, 255, 255, 0.3), inset 0 -10px 18px rgba(0, 0, 0, 0.18)`;
     },
     setHighScore() {
       // The persistent high score is handled inside the scene; the menu uses the live scoreboard only.
@@ -1214,7 +1267,7 @@ function buildUiBridge() {
   ui.setPressure(0);
   ui.setCombo(0);
   ui.setStability(100);
-  ui.setNextColor('gold');
+  ui.setNextColor('concrete');
   return ui;
 }
 
