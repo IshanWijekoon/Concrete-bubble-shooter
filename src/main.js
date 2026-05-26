@@ -1,3 +1,10 @@
+import photoVault from './assets/images/photo_1_2026-05-15_19-53-42.jpg?url';
+import photoCapital from './assets/images/photo_2_2026-05-15_19-53-42.jpg?url';
+import photoShield from './assets/images/photo_3_2026-05-15_19-53-42.jpg?url';
+import photoYield from './assets/images/photo_4_2026-05-15_19-53-42.jpg?url';
+import photoCapitalAlt from './assets/images/photo_5_2026-05-15_19-53-42.jpg?url';
+import photoReserve from './assets/images/photo_6_2026-05-15_19-53-42.jpg?url';
+
 const Phaser = window.Phaser;
 
 const STORAGE_KEY = 'concrete-vault-defender-settings';
@@ -20,12 +27,12 @@ const ORB_VARIANTS = {
 };
 
 const PHOTO_ASSETS = [
-  ['photo-vault', './src/assets/images/photo_1_2026-05-15_19-53-42.jpg'],
-  ['photo-capital', './src/assets/images/photo_2_2026-05-15_19-53-42.jpg'],
-  ['photo-shield', './src/assets/images/photo_3_2026-05-15_19-53-42.jpg'],
-  ['photo-yield', './src/assets/images/photo_4_2026-05-15_19-53-42.jpg'],
-  ['photo-capital-alt', './src/assets/images/photo_5_2026-05-15_19-53-42.jpg'],
-  ['photo-reserve', './src/assets/images/photo_6_2026-05-15_19-53-42.jpg'],
+  ['photo-vault', photoVault],
+  ['photo-capital', photoCapital],
+  ['photo-shield', photoShield],
+  ['photo-yield', photoYield],
+  ['photo-capital-alt', photoCapitalAlt],
+  ['photo-reserve', photoReserve],
 ];
 
 const PHOTO_ASSET_MAP = Object.fromEntries(PHOTO_ASSETS);
@@ -204,6 +211,8 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.currentSkinKey = null;
     this.nextColor = 'stablecoin';
     this.nextSkinKey = null;
+    this.isAiming = false;
+    this.chargeTimer = null;
     this.isCharging = false;
     this.chargeStart = 0;
     this.chargeMaxMs = 1200;
@@ -625,7 +634,16 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.lastPointer.x = pointer.worldX;
     this.lastPointer.y = pointer.worldY;
     this.updateAim(pointer.worldX, pointer.worldY);
-    this.startCharge();
+    // Begin aiming immediately. Start charging only after a short hold.
+    this.isAiming = true;
+    if (this.chargeTimer) {
+      clearTimeout(this.chargeTimer);
+      this.chargeTimer = null;
+    }
+    this.chargeTimer = setTimeout(() => {
+      this.chargeTimer = null;
+      this.startCharge();
+    }, 200);
   }
 
   handleShootKey() {
@@ -671,12 +689,24 @@ class ConcreteVaultScene extends Phaser.Scene {
       this.updateAim(pointer.worldX, pointer.worldY);
       this.drawAimGuide();
     }
+    // cancel pending charge timer if present
+    if (this.chargeTimer) {
+      clearTimeout(this.chargeTimer);
+      this.chargeTimer = null;
+    }
     if (this.isCharging) {
       const now = Date.now();
       const dur = Math.max(0, now - this.chargeStart);
       const ratio = Math.min(1, dur / this.chargeMaxMs);
       const multiplier = 1 + ratio * (this.chargeMaxMultiplier - 1);
       this.releaseCharge(multiplier);
+      this.isAiming = false;
+      return;
+    }
+    // if we weren't charging, treat as a quick tap -> immediate fire
+    if (this.isAiming) {
+      this.isAiming = false;
+      this.fireProjectile(1);
     }
   }
 
@@ -1490,7 +1520,7 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   syncNextPreview() {
-    this.hud?.setNextColor(this.currentColor, this.currentSkinKey);
+    this.hud?.setNextColor(this.nextColor, this.nextSkinKey);
   }
 
   showStatus(message, duration = 900) {
