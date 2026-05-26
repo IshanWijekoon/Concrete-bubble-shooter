@@ -20,12 +20,12 @@ const ORB_VARIANTS = {
 };
 
 const PHOTO_ASSETS = [
-  ['photo-vault', './photo_1_2026-05-15_19-53-42.jpg'],
-  ['photo-capital', './photo_2_2026-05-15_19-53-42.jpg'],
-  ['photo-shield', './photo_3_2026-05-15_19-53-42.jpg'],
-  ['photo-yield', './photo_4_2026-05-15_19-53-42.jpg'],
-  ['photo-capital-alt', './photo_5_2026-05-15_19-53-42.jpg'],
-  ['photo-reserve', './photo_6_2026-05-15_19-53-42.jpg'],
+  ['photo-vault', './src/assets/images/photo_1_2026-05-15_19-53-42.jpg'],
+  ['photo-capital', './src/assets/images/photo_2_2026-05-15_19-53-42.jpg'],
+  ['photo-shield', './src/assets/images/photo_3_2026-05-15_19-53-42.jpg'],
+  ['photo-yield', './src/assets/images/photo_4_2026-05-15_19-53-42.jpg'],
+  ['photo-capital-alt', './src/assets/images/photo_5_2026-05-15_19-53-42.jpg'],
+  ['photo-reserve', './src/assets/images/photo_6_2026-05-15_19-53-42.jpg'],
 ];
 
 const PHOTO_ASSET_MAP = Object.fromEntries(PHOTO_ASSETS);
