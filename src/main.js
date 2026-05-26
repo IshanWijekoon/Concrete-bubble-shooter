@@ -223,6 +223,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.motionEnabled = true;
     this.aimGuideEnabled = true;
     this.pointerIsActive = false;
+    this.lastPointer = { x: null, y: null };
     this.bubbles = [];
     this.overlayMessage = null;
     this.shakeStrength = 0;
@@ -604,6 +605,8 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     this.pointerIsActive = true;
+    this.lastPointer.x = pointer.worldX;
+    this.lastPointer.y = pointer.worldY;
     this.updateAim(pointer.worldX, pointer.worldY);
   }
 
@@ -612,6 +615,8 @@ class ConcreteVaultScene extends Phaser.Scene {
       return;
     }
 
+    this.lastPointer.x = pointer.worldX;
+    this.lastPointer.y = pointer.worldY;
     this.updateAim(pointer.worldX, pointer.worldY);
     this.startCharge();
   }
@@ -631,6 +636,13 @@ class ConcreteVaultScene extends Phaser.Scene {
 
   handleShootKeyUp() {
     if (this.state !== 'playing') return;
+    // ensure aim reflects latest pointer position when using keyboard
+    const px = (this.lastPointer && this.lastPointer.x != null) ? this.lastPointer.x : this.input.activePointer.worldX;
+    const py = (this.lastPointer && this.lastPointer.y != null) ? this.lastPointer.y : this.input.activePointer.worldY;
+    if (px != null && py != null) {
+      this.updateAim(px, py);
+      this.drawAimGuide();
+    }
     if (this.isCharging) {
       const now = Date.now();
       const dur = Math.max(0, now - this.chargeStart);
@@ -645,6 +657,13 @@ class ConcreteVaultScene extends Phaser.Scene {
 
   handlePointerUp(pointer) {
     if (this.state !== 'playing') return;
+    // update last pointer and aim to release position, then redraw guide
+    if (pointer && pointer.worldX != null) {
+      this.lastPointer.x = pointer.worldX;
+      this.lastPointer.y = pointer.worldY;
+      this.updateAim(pointer.worldX, pointer.worldY);
+      this.drawAimGuide();
+    }
     if (this.isCharging) {
       const now = Date.now();
       const dur = Math.max(0, now - this.chargeStart);
@@ -673,7 +692,8 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     vector.normalize();
-    vector.y = Math.min(vector.y, -0.12);
+    // allow shallower upward angles so corners are reachable
+    vector.y = Math.min(vector.y, -0.06);
     vector.normalize();
     this.aimDirection.copy(vector);
     this.drawAimGuide();
