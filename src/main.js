@@ -297,6 +297,9 @@ class ConcreteVaultScene extends Phaser.Scene {
         fill: true,
       },
     }).setOrigin(0.5).setAlpha(0);
+    // Keep the status text visually above game sprites and fixed to camera
+    this.statusText.setDepth(200);
+    this.statusText.setScrollFactor(0);
 
     this.scale.on('resize', this.handleResize, this);
     this.input.on('pointermove', this.handlePointerMove, this);
@@ -424,7 +427,12 @@ class ConcreteVaultScene extends Phaser.Scene {
     };
 
     this.launcher = { x: this.board.shooterX, y: this.board.shooterY };
-    this.statusText.setPosition(width / 2, height / 2 - 24);
+    // Responsive font sizing for mobile / small screens
+    const baseSize = Math.max(12, Math.round(Math.min(width, height) * 0.035));
+    this.statusText.setStyle({ fontSize: `${baseSize}px` });
+    // Vertical offset: nudge up on small screens to avoid overlapping the bubble field
+    const yOffset = height < 520 ? Math.round(-Math.max(28, baseSize * 1.4)) : -24;
+    this.statusText.setPosition(width / 2, height / 2 + yOffset);
     this.repositionDecor(width, height);
     this.relayoutBubbles();
     this.redrawProjectile();
