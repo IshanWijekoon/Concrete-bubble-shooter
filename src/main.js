@@ -28,6 +28,16 @@ const PHOTO_ASSETS = [
   ['photo-reserve', './photo_6_2026-05-15_19-53-42.jpg'],
 ];
 
+const PHOTO_ASSET_MAP = Object.fromEntries(PHOTO_ASSETS);
+const PREVIEW_IMAGE_BY_SKIN = {
+  'vault-orb': PHOTO_ASSET_MAP['photo-vault'],
+  'capital-node': PHOTO_ASSET_MAP['photo-capital-alt'],
+  'capital-node-gray': PHOTO_ASSET_MAP['photo-capital'],
+  'shield-core': PHOTO_ASSET_MAP['photo-shield'],
+  'yield-rocket': PHOTO_ASSET_MAP['photo-yield'],
+  'reserve-sphere': PHOTO_ASSET_MAP['photo-reserve'],
+};
+
 const MOBILE_STAGE_WIDTH = 390;
 const MOBILE_STAGE_HEIGHT = 844;
 
@@ -191,7 +201,9 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.aimDirection = new Phaser.Math.Vector2(0, -1);
     this.launcher = { x: 0, y: 0 };
     this.currentColor = 'concrete';
+    this.currentSkinKey = null;
     this.nextColor = 'stablecoin';
+    this.nextSkinKey = null;
     this.score = 0;
     this.level = 1;
     this.comboChain = 0;
@@ -434,7 +446,9 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.clearBoard();
     this.spawnOpeningWave();
     this.nextColor = pickColor(this.level);
+    this.nextSkinKey = pickVariantKey(this.nextColor);
     this.currentColor = pickColor(this.level);
+    this.currentSkinKey = pickVariantKey(this.currentColor);
     this.syncHud();
     this.showStatus(fullReset ? 'VAULT STABILIZED' : 'NEW WAVE READY', 1100);
     this.audio?.tone({ frequency: 420, duration: 0.08, type: 'triangle', gain: 0.03, bend: 20 });
@@ -624,8 +638,12 @@ class ConcreteVaultScene extends Phaser.Scene {
       this.currentColor = pickColor(this.level);
     }
 
+    if (this.currentSkinKey == null) {
+      this.currentSkinKey = pickVariantKey(this.currentColor);
+    }
+
     const scale = this.board.radius / 22;
-    this.projectileSprite = this.add.image(this.launcher.x, this.launcher.y, pickVariantKey(this.currentColor))
+    this.projectileSprite = this.add.image(this.launcher.x, this.launcher.y, this.currentSkinKey)
       .setScale(scale)
       .setDepth(3)
       .setBlendMode(Phaser.BlendModes.NORMAL);
@@ -643,7 +661,9 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.syncHud();
 
     this.currentColor = this.nextColor;
+    this.currentSkinKey = this.nextSkinKey;
     this.nextColor = pickColor(this.level);
+    this.nextSkinKey = pickVariantKey(this.nextColor);
     this.syncNextPreview();
     this.drawAimGuide();
   }
@@ -968,7 +988,9 @@ class ConcreteVaultScene extends Phaser.Scene {
         if (this.state === 'playing') {
           this.spawnOpeningWave();
           this.currentColor = pickColor(this.level);
+          this.currentSkinKey = pickVariantKey(this.currentColor);
           this.nextColor = pickColor(this.level);
+          this.nextSkinKey = pickVariantKey(this.nextColor);
           this.syncNextPreview();
           this.syncHud();
         }
@@ -1381,7 +1403,7 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   syncNextPreview() {
-    this.hud?.setNextColor(this.nextColor);
+    this.hud?.setNextColor(this.currentColor, this.currentSkinKey);
   }
 
   showStatus(message, duration = 900) {
@@ -1480,10 +1502,16 @@ function buildUiBridge() {
     setStability(value) {
       stabilityValue.textContent = `${value}%`;
     },
-    setNextColor(colorKey) {
+    setNextColor(colorKey, skinKey) {
       const color = COLORS[colorKey] ?? COLORS.concrete;
       const rimColor = colorKey === 'premium' ? 0xd8b76a : color;
-      nextBubblePreview.style.background = `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.58), transparent 33%), radial-gradient(circle at 68% 74%, ${hexToRgba(rimColor, 0.24)}, transparent 58%), linear-gradient(180deg, ${hexToCss(color)}, ${colorKey === 'premium' ? '#0d0d11' : '#674714'})`;
+      const previewImage = skinKey ? PREVIEW_IMAGE_BY_SKIN[skinKey] : null;
+      nextBubblePreview.style.backgroundImage = previewImage
+        ? `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.58), transparent 33%), radial-gradient(circle at 68% 74%, ${hexToRgba(rimColor, 0.24)}, transparent 58%), url("${previewImage}")`
+        : `radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.58), transparent 33%), radial-gradient(circle at 68% 74%, ${hexToRgba(rimColor, 0.24)}, transparent 58%), linear-gradient(180deg, ${hexToCss(color)}, ${colorKey === 'premium' ? '#0d0d11' : '#674714'})`;
+      nextBubblePreview.style.backgroundPosition = 'center, center, center';
+      nextBubblePreview.style.backgroundSize = 'auto, auto, cover';
+      nextBubblePreview.style.backgroundRepeat = 'no-repeat';
       nextBubblePreview.style.borderColor = hexToRgba(rimColor, 0.36);
       nextBubblePreview.style.boxShadow = `0 0 18px ${hexToRgba(rimColor, 0.28)}, inset 0 2px 8px rgba(255, 255, 255, 0.3), inset 0 -10px 18px rgba(0, 0, 0, 0.18)`;
     },
@@ -1630,7 +1658,7 @@ function buildUiBridge() {
   ui.setPressure(0);
   ui.setCombo(0);
   ui.setStability(100);
-  ui.setNextColor('concrete');
+  ui.setNextColor('concrete', 'vault-orb');
   ui.setYield?.(100);
   ui.setEfficiency?.(1);
   ui.setOptimization?.(0);
@@ -1653,10 +1681,10 @@ const game = new Phaser.Game({
   parent: 'game-root',
   backgroundColor: '#050505',
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: MOBILE_STAGE_WIDTH,
-    height: MOBILE_STAGE_HEIGHT,
+    width: '100%',
+    height: '100%',
   },
   render: {
     antialias: true,

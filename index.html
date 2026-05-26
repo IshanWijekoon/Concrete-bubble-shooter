@@ -1,258 +1,174 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="./src/styles.css" />
-    <meta
-      name="description"
-      content="Concrete Vault Defender - a premium Phaser bubble shooter set inside a futuristic DeFi fortress."
-    />
-    <meta name="theme-color" content="#050505" />
-    <title>Concrete Vault Defender</title>
-  </head>
-  <body>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-    <div id="app-shell">
-      <div class="background-layers" aria-hidden="true">
-        <div class="gradient-sheen gradient-sheen--left"></div>
-        <div class="gradient-sheen gradient-sheen--right"></div>
-        <div class="gradient-sheen gradient-sheen--top"></div>
-        <div class="concrete-grain"></div>
-        <div id="particle-layer"></div>
-      </div>
 
-      <div id="game-root" aria-label="Concrete Vault Defender game canvas"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="./src/styles.css" />
+  <meta name="description"
+    content="Vault Defender - a premium Phaser bubble shooter set inside a futuristic DeFi fortress." />
+  <meta name="theme-color" content="#050505" />
+  <title>Vault Defender</title>
+</head>
 
-      <div id="ui-layer">
-        <header id="hud" class="hud hidden">
-          <div class="hud-top">
-            <div class="hud-brand">
-              <div class="hud-brand__logo">
-                <!-- Inline Concrete logo SVG (stylized concrete slab + vault glyph) -->
-                <svg viewBox="0 0 120 36" class="concrete-logo" role="img" aria-label="Concrete logo">
-                  <defs>
-                    <linearGradient id="g1" x1="0" x2="1">
-                      <stop offset="0" stop-color="#2b2b2b" />
-                      <stop offset="1" stop-color="#0b0b0b" />
-                    </linearGradient>
-                  </defs>
-                  <rect x="0" y="4" width="120" height="28" rx="6" fill="url(#g1)" stroke="#aa8a2b" stroke-opacity="0.9" stroke-width="1.6"/>
-                  <g transform="translate(10,8) scale(0.9)" fill="#ffdf8a">
-                    <circle cx="12" cy="10" r="6" fill="#f3d37a" opacity="0.98" />
-                    <rect x="20" y="6" width="70" height="8" rx="2" fill="#ffd27a" opacity="0.18"/>
-                  </g>
-                  <text x="88" y="23" font-family="Orbitron, sans-serif" font-size="9" fill="#fff6df" letter-spacing="0.06em">CONCRETE</text>
-                </svg>
-              </div>
-              <div class="hud-brand__text">
-                <span class="hud-brand__eyebrow">Concrete Network</span>
-                <span class="hud-brand__title">Vault Defender</span>
-              </div>
-              <div class="hud-brand__mascot" aria-hidden="true">
-                <!-- Simple animated Concrete face mascot (SVG) -->
-                <svg viewBox="0 0 80 80" class="mascot" width="56" height="56">
-                  <defs>
-                    <radialGradient id="eyeGrad" cx="30%" cy="30%">
-                      <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
-                      <stop offset="100%" stop-color="#ffd37a" stop-opacity="0.06"/>
-                    </radialGradient>
-                  </defs>
-                  <rect x="6" y="6" width="68" height="68" rx="10" fill="#0b0b0b" stroke="#d9b86b" stroke-width="2" />
-                  <g transform="translate(8,10)">
-                    <circle cx="18" cy="18" r="8" fill="url(#eyeGrad)" class="mascot-eye-left" />
-                    <circle cx="46" cy="18" r="8" fill="url(#eyeGrad)" class="mascot-eye-right" />
-                    <rect x="20" y="38" width="28" height="6" rx="3" fill="#2b2b2b" stroke="#c58f35" stroke-width="1" />
-                    <path d="M10 28 q26 14 52 0" stroke="#ffd37a" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.85"/>
-                  </g>
-                </svg>
-              </div>
-            </div>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <div id="app-shell">
+    <div class="background-layers" aria-hidden="true">
+      <div class="gradient-sheen gradient-sheen--left"></div>
+      <div class="gradient-sheen gradient-sheen--right"></div>
+      <div class="gradient-sheen gradient-sheen--top"></div>
+      <div class="concrete-grain"></div>
+      <div id="particle-layer"></div>
+    </div>
 
-            <div class="hud-stats">
-              <div class="stat-card">
-                <span class="stat-label">Capital Optimization</span>
-                <strong id="scoreValue">0</strong>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Vault Efficiency</span>
-                <strong id="levelValue">1</strong>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Risk Level</span>
-                <strong id="pressureValue">0%</strong>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">System Integrity</span>
-                <strong id="comboValue">0x</strong>
-              </div>
-              <div class="stat-card">
-                <span class="stat-label">Yield Stability</span>
-                <strong id="stabilityValue">100%</strong>
-              </div>
+    <div id="game-root" aria-label="Concrete Vault Defender game canvas"></div>
+
+    <div id="ui-layer">
+      <header id="hud" class="hud hidden">
+        <div class="hud-top">
+          <div class="hud-brand">
+            <div class="hud-brand__text">
+              <span class="hud-brand__title">Vault Defender</span>
             </div>
           </div>
 
-          <div class="hud-bottom">
-            <div class="next-shot-panel">
-              <span class="stat-label">Next Shot</span>
-              <div class="next-shot-orb-shell" aria-hidden="true">
-                <div id="nextBubblePreview" class="next-bubble"></div>
-              </div>
+          <div class="hud-stats">
+            <div class="stat-card">
+              <span class="stat-label">Score</span>
+              <strong id="scoreValue">0</strong>
             </div>
-          </div>
-        </header>
-
-        <!-- Floating financial-style HUD -->
-        <div class="floating-hud" aria-hidden="true">
-          <div class="floating-card">
-            <span class="label">Yield Stability</span>
-            <strong id="yieldValue" class="value">100%</strong>
-          </div>
-          <div class="floating-card">
-            <span class="label">Vault Efficiency</span>
-            <strong id="efficiencyValue" class="value">1</strong>
-          </div>
-          <div class="floating-card">
-            <span class="label">Capital Optimization</span>
-            <strong id="optimizationValue" class="value">0</strong>
-          </div>
-          <div class="floating-card">
-            <span class="label">Risk Level</span>
-            <strong id="riskValue" class="value">0%</strong>
-          </div>
-          <div class="floating-card">
-            <span class="label">System Integrity</span>
-            <strong id="integrityValue" class="value">0x</strong>
+            <div class="stat-card">
+              <span class="stat-label">Level</span>
+              <strong id="levelValue">1</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Pressure</span>
+              <strong id="pressureValue">0%</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Combo</span>
+              <strong id="comboValue">0x</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Vault Stability</span>
+              <strong id="stabilityValue">100%</strong>
+            </div>
           </div>
         </div>
 
-        <section class="power-rack" aria-label="Active power-up systems">
-          <article id="powerAutoCompound" class="power-card" data-state="ready" style="--power-accent:#7be7ff;">
-            <span class="power-label">Auto Compound</span>
-            <strong class="power-status">READY</strong>
-            <div class="power-meter"><span class="power-meter__fill"></span></div>
-          </article>
-          <article id="powerLiquidityBoost" class="power-card" data-state="ready" style="--power-accent:#8bf0c5;">
-            <span class="power-label">Liquidity Boost</span>
-            <strong class="power-status">READY</strong>
-            <div class="power-meter"><span class="power-meter__fill"></span></div>
-          </article>
-          <article id="powerRiskShield" class="power-card" data-state="armed" style="--power-accent:#9ad0ff;">
-            <span class="power-label">Risk Shield</span>
-            <strong class="power-status">ARMED</strong>
-            <div class="power-meter"><span class="power-meter__fill"></span></div>
-          </article>
-          <article id="powerCapitalSurge" class="power-card" data-state="ready" style="--power-accent:#ffdf84;">
-            <span class="power-label">Capital Surge</span>
-            <strong class="power-status">READY</strong>
-            <div class="power-meter"><span class="power-meter__fill"></span></div>
-          </article>
-          <article id="powerInstitutionalMode" class="power-card" data-state="ready" style="--power-accent:#d9b86b;">
-            <span class="power-label">Institutional Mode</span>
-            <strong class="power-status">READY</strong>
-            <div class="power-meter"><span class="power-meter__fill"></span></div>
-          </article>
-        </section>
-
-        <main id="mainMenu" class="menu-overlay">
-          <section class="menu-card">
-            <p class="menu-kicker">Institutional Cyber Defense Protocol</p>
-            <h1 class="menu-title">
-              <span>CONCRETE</span>
-              <span>VAULT</span>
-              <span>DEFENDER</span>
-            </h1>
-            <p class="menu-subtitle">Build Systems. Stay Solid.</p>
-
-            <div class="menu-actions">
-              <button id="playButton" class="primary-button">Play</button>
-              <button id="howToButton" class="secondary-button">How To Play</button>
-              <button id="settingsButton" class="secondary-button">Settings</button>
+        <div class="hud-bottom">
+          <div class="next-shot-panel">
+            <span class="stat-label">Next Shot</span>
+            <div class="next-shot-orb-shell" aria-hidden="true">
+              <div id="nextBubblePreview" class="next-bubble"></div>
             </div>
-
-            <div class="menu-readout">
-              <div>
-                <span class="stat-label">Mode</span>
-                <strong>Bubble Shooter / Match Shooter</strong>
-              </div>
-              <div>
-                <span class="stat-label">Aesthetic</span>
-                <strong>Black Steel. Gold Circuitry.</strong>
-              </div>
-            </div>
-          </section>
-        </main>
-
-        <section id="howToModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card">
-            <div class="modal-header">
-              <p class="modal-kicker">How To Play</p>
-              <button class="icon-button close-modal" data-close="howToModal" aria-label="Close how to play dialog">×</button>
-            </div>
-            <h2>Lock the grid, match the bubbles, and maintain Yield Stability.</h2>
-            <ul class="instruction-list">
-              <li>Move your pointer to aim the launcher.</li>
-              <li>Click or tap to fire the current bubble.</li>
-              <li>Match 3 or more bubbles of the same color to clear them.</li>
-              <li>Disconnected bubbles fall away for bonus score.</li>
-              <li>Every few turns, pressure rows descend. Manage Risk Level to survive the stack.</li>
-            </ul>
           </div>
-        </section>
+        </div>
+      </header>
 
-        <section id="settingsModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card">
-            <div class="modal-header">
-              <p class="modal-kicker">Settings</p>
-              <button class="icon-button close-modal" data-close="settingsModal" aria-label="Close settings dialog">×</button>
+
+
+      <main id="mainMenu" class="menu-overlay">
+        <section class="menu-card">
+          <p class="menu-kicker">Institutional Cyber Defense Protocol</p>
+          <h1 class="menu-title">
+            <span>VAULT</span>
+            <span>DEFENDER</span>
+          </h1>
+          <p class="menu-subtitle">Build Systems. Stay Solid.</p>
+
+          <div class="menu-actions">
+            <button id="playButton" class="primary-button">Play</button>
+            <button id="howToButton" class="secondary-button">How To Play</button>
+            <button id="settingsButton" class="secondary-button">Settings</button>
+          </div>
+
+          <div class="menu-readout">
+            <div>
+              <span class="stat-label">Mode</span>
+              <strong>Bubble Shooter / Match Shooter</strong>
             </div>
-            <h2>Premium controls for a premium vault.</h2>
-            <div class="settings-grid">
-              <label class="toggle-row">
-                <span>
-                  <strong>Sound FX</strong>
-                  <small>Precision tones for shots, pops, and failure states.</small>
-                </span>
-                <input id="soundToggle" type="checkbox" />
-                <span class="toggle-pill" aria-hidden="true"></span>
-              </label>
-
-              <label class="toggle-row">
-                <span>
-                  <strong>Aim Guide</strong>
-                  <small>Show the projected aim beam.</small>
-                </span>
-                <input id="aimGuideToggle" type="checkbox" />
-                <span class="toggle-pill" aria-hidden="true"></span>
-              </label>
-
-              <label class="toggle-row">
-                <span>
-                  <strong>Motion</strong>
-                  <small>Keep atmospheric UI animations active.</small>
-                </span>
-                <input id="motionToggle" type="checkbox" />
-                <span class="toggle-pill" aria-hidden="true"></span>
-              </label>
+            <div>
+              <span class="stat-label">Aesthetic</span>
+              <strong>Black Steel. Gold Circuitry.</strong>
             </div>
           </div>
         </section>
+      </main>
 
-        <section id="gameOverModal" class="modal hidden" aria-hidden="true">
-          <div class="modal-card game-over-card">
-            <p class="modal-kicker">Vault Breached</p>
-            <h2>Stability lost. Rebuild the wall and try again.</h2>
-            <p id="finalScoreText" class="game-over-score">Final Score: 0</p>
-            <div class="menu-actions menu-actions--compact">
-              <button id="restartButton" class="primary-button">Play Again</button>
-              <button id="menuButton" class="secondary-button">Back to Menu</button>
-            </div>
+      <section id="howToModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-header">
+            <p class="modal-kicker">How To Play</p>
+            <button class="icon-button close-modal" data-close="howToModal"
+              aria-label="Close how to play dialog">×</button>
           </div>
-        </section>
-      </div>
+          <h2>Lock the grid, match the bubbles, and maintain Yield Stability.</h2>
+          <ul class="instruction-list">
+            <li>Move your pointer to aim the launcher.</li>
+            <li>Click or tap to fire the current bubble.</li>
+            <li>Match 3 or more bubbles of the same color to clear them.</li>
+            <li>Disconnected bubbles fall away for bonus score.</li>
+            <li>Every few turns, pressure rows descend. Manage Risk Level to survive the stack.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="settingsModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card">
+          <div class="modal-header">
+            <p class="modal-kicker">Settings</p>
+            <button class="icon-button close-modal" data-close="settingsModal"
+              aria-label="Close settings dialog">×</button>
+          </div>
+          <h2>Premium controls for a premium vault.</h2>
+          <div class="settings-grid">
+            <label class="toggle-row">
+              <span>
+                <strong>Sound FX</strong>
+                <small>Precision tones for shots, pops, and failure states.</small>
+              </span>
+              <input id="soundToggle" type="checkbox" />
+              <span class="toggle-pill" aria-hidden="true"></span>
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <strong>Aim Guide</strong>
+                <small>Show the projected aim beam.</small>
+              </span>
+              <input id="aimGuideToggle" type="checkbox" />
+              <span class="toggle-pill" aria-hidden="true"></span>
+            </label>
+
+            <label class="toggle-row">
+              <span>
+                <strong>Motion</strong>
+                <small>Keep atmospheric UI animations active.</small>
+              </span>
+              <input id="motionToggle" type="checkbox" />
+              <span class="toggle-pill" aria-hidden="true"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="gameOverModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-card game-over-card">
+          <p class="modal-kicker">Vault Breached</p>
+          <h2>Stability lost. Rebuild the wall and try again.</h2>
+          <p id="finalScoreText" class="game-over-score">Final Score: 0</p>
+          <div class="menu-actions menu-actions--compact">
+            <button id="restartButton" class="primary-button">Play Again</button>
+            <button id="menuButton" class="secondary-button">Back to Menu</button>
+          </div>
+        </div>
+      </section>
     </div>
+  </div>
 
-    <script type="module" src="./src/main.js"></script>
-  </body>
+  <script type="module" src="./src/main.js"></script>
+</body>
+
 </html>

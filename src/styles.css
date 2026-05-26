@@ -55,24 +55,11 @@ button {
 
 #app-shell {
   position: relative;
-  width: min(100vw, 430px);
+  width: 100vw;
   height: 100vh;
   overflow: hidden;
   isolation: isolate;
-  border-left: 1px solid rgba(255, 215, 94, 0.08);
-  border-right: 1px solid rgba(255, 215, 94, 0.08);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.02),
-    0 20px 80px rgba(0, 0, 0, 0.55);
   background: rgba(5, 5, 5, 0.96);
-}
-
-@media (max-width: 430px) {
-  #app-shell {
-    width: 100vw;
-    border-left: 0;
-    border-right: 0;
-  }
 }
 
 .background-layers,
@@ -455,162 +442,7 @@ button {
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* Floating financial HUD (minimal, futuristic) */
-.floating-hud {
-  position: absolute;
-  right: 12px;
-  top: 18%;
-  display: grid;
-  gap: 10px;
-  z-index: 6;
-  pointer-events: none;
-}
 
-.floating-card {
-  min-width: 160px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(12,12,14,0.62), rgba(10,10,12,0.34));
-  border: 1px solid rgba(255,215,94,0.12);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255,200,80,0.02) inset;
-  backdrop-filter: blur(8px);
-  color: var(--text);
-  transform: translateZ(0);
-  pointer-events: none;
-}
-
-.floating-card .label { display:block; font-size:0.64rem; color:var(--gold); text-transform:uppercase; letter-spacing:0.12em; }
-.floating-card .value { display:block; margin-top:4px; font-family: 'Orbitron', sans-serif; font-size:1rem; color:var(--gold-bright); text-shadow: 0 0 12px rgba(243,211,122,0.12);} 
-
-.floating-card::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: 0 8px 30px rgba(255, 200, 80, 0.04) inset;
-  pointer-events: none;
-}
-
-.power-rack {
-  position: absolute;
-  left: 12px;
-  top: 18%;
-  z-index: 6;
-  display: grid;
-  gap: 8px;
-  width: min(44vw, 210px);
-  pointer-events: none;
-}
-
-.power-card {
-  position: relative;
-  overflow: hidden;
-  padding: 10px 12px 9px;
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, rgba(14, 15, 18, 0.9), rgba(8, 8, 10, 0.72)),
-    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--power-accent) 26%, transparent), transparent 44%);
-  border: 1px solid color-mix(in srgb, var(--power-accent) 24%, rgba(255, 255, 255, 0.12));
-  box-shadow:
-    0 12px 36px rgba(0, 0, 0, 0.42),
-    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 0 22px color-mix(in srgb, var(--power-accent) 12%, transparent);
-  backdrop-filter: blur(14px);
-  transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease, opacity 220ms ease;
-}
-
-.power-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(120deg, transparent 32%, color-mix(in srgb, var(--power-accent) 28%, transparent) 50%, transparent 68%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 38%);
-  opacity: 0.75;
-  pointer-events: none;
-}
-
-.power-card[data-state='active'] {
-  transform: translateX(2px) scale(1.02);
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.52),
-    0 0 24px color-mix(in srgb, var(--power-accent) 26%, transparent),
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
-}
-
-.power-card[data-state='cooldown'] {
-  opacity: 0.8;
-}
-
-.power-card[data-state='recharging'] {
-  opacity: 0.72;
-}
-
-.power-label,
-.power-status {
-  position: relative;
-  z-index: 1;
-  display: block;
-}
-
-.power-label {
-  margin: 0 0 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.58rem;
-  color: color-mix(in srgb, var(--power-accent) 64%, var(--gold));
-}
-
-.power-status {
-  margin: 0 0 7px;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 0.76rem;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-  color: var(--text);
-  text-shadow: 0 0 12px color-mix(in srgb, var(--power-accent) 18%, transparent);
-}
-
-.power-meter {
-  position: relative;
-  z-index: 1;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-}
-
-.power-meter__fill {
-  display: block;
-  width: var(--power-fill, 0%);
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--power-accent) 88%, white), var(--power-accent));
-  box-shadow: 0 0 18px color-mix(in srgb, var(--power-accent) 30%, transparent);
-  transition: width 260ms ease, box-shadow 260ms ease;
-}
-
-.power-card[data-state='active'] .power-meter__fill {
-  animation: powerFlow 1.15s linear infinite;
-}
-
-.power-card[data-state='armed'] .power-meter__fill {
-  width: 100%;
-}
-
-.power-card[data-state='ready'] .power-status {
-  color: color-mix(in srgb, var(--power-accent) 62%, var(--gold-bright));
-}
-
-.power-card[data-state='cooldown'] .power-status,
-.power-card[data-state='recharging'] .power-status {
-  color: rgba(246, 241, 227, 0.7);
-}
-
-.power-card[data-state='armed'] {
-  animation: shieldPulse 2.7s ease-in-out infinite;
-}
 
 /* Cinematic lighting accent for the whole app shell */
 #app-shell::before {
