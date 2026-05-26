@@ -419,6 +419,10 @@ class ConcreteVaultScene extends Phaser.Scene {
     const width = gameSize.width ?? this.scale.width;
     const height = gameSize.height ?? this.scale.height;
     const radius = clamp(Math.floor(Math.min(width / 20.5, height / 28)), 16, 22);
+    const compactScreen = height < 760;
+    const boardTop = compactScreen ? Math.max(84, Math.round(height * 0.1)) : Math.max(106, Math.round(height * 0.13));
+    const boardBottom = compactScreen ? height - Math.max(112, Math.round(height * 0.1)) : height - Math.max(142, Math.round(height * 0.14));
+    const shooterY = compactScreen ? height - Math.max(78, Math.round(height * 0.055)) : height - Math.max(100, Math.round(height * 0.08));
 
     this.board = {
       width,
@@ -428,9 +432,9 @@ class ConcreteVaultScene extends Phaser.Scene {
       diameter: radius * 2,
       rowHeight: Math.max(Math.floor(radius * 1.92), radius * 2 + 1),
       left: Math.round((width - ((this.columns * radius * 2) + radius)) / 2),
-      top: Math.max(106, Math.round(height * 0.13)),
-      bottom: height - Math.max(142, Math.round(height * 0.14)),
-      shooterY: height - Math.max(100, Math.round(height * 0.08)),
+      top: boardTop,
+      bottom: boardBottom,
+      shooterY,
       shooterX: Math.round(width / 2),
     };
 
@@ -470,10 +474,10 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.resetPowerUps();
     this.clearBoard();
     this.spawnOpeningWave();
-    this.nextColor = pickColor(this.level);
-    this.nextSkinKey = pickVariantKey(this.nextColor);
     this.currentColor = pickColor(this.level);
     this.currentSkinKey = pickVariantKey(this.currentColor);
+    this.nextColor = pickColor(this.level);
+    this.nextSkinKey = pickVariantKey(this.nextColor);
     this.syncHud();
     this.showStatus(fullReset ? 'VAULT STABILIZED' : 'NEW WAVE READY', 1100);
     this.audio?.tone({ frequency: 420, duration: 0.08, type: 'triangle', gain: 0.03, bend: 20 });
@@ -516,14 +520,14 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.relayoutBubbles();
   }
 
-  spawnBubble(row, col, colorKey) {
-    const skinKey = pickVariantKey(colorKey);
+  spawnBubble(row, col, colorKey, skinKey = null) {
+    const skinToUse = skinKey || pickVariantKey(colorKey);
     const bubble = {
       row,
       col,
       colorKey,
-      skinKey,
-      sprite: this.add.image(0, 0, skinKey),
+      skinKey: skinToUse,
+      sprite: this.add.image(0, 0, skinToUse),
       scale: this.board.bubbleScale,
       moving: false,
     };
@@ -758,6 +762,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.projectile = {
       sprite: this.projectileSprite,
       colorKey: this.currentColor,
+      skinKey: this.currentSkinKey,
       radius: this.board.radius,
     };
 
@@ -885,7 +890,7 @@ class ConcreteVaultScene extends Phaser.Scene {
       return;
     }
 
-    const bubble = this.spawnBubble(targetCell.row, targetCell.col, this.projectile.colorKey);
+    const bubble = this.spawnBubble(targetCell.row, targetCell.col, this.projectile.colorKey, this.projectile.skinKey);
     bubble.sprite.setScale(this.board.bubbleScale);
     bubble.sprite.setAlpha(0.98);
     bubble.sprite.setPosition(this.projectile.sprite.x, this.projectile.sprite.y);
@@ -1520,7 +1525,7 @@ class ConcreteVaultScene extends Phaser.Scene {
   }
 
   syncNextPreview() {
-    this.hud?.setNextColor(this.nextColor, this.nextSkinKey);
+    this.hud?.setNextColor(this.currentColor, this.currentSkinKey);
   }
 
   showStatus(message, duration = 900) {
