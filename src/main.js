@@ -204,6 +204,11 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.currentSkinKey = null;
     this.nextColor = 'stablecoin';
     this.nextSkinKey = null;
+    this.isCharging = false;
+    this.chargeStart = 0;
+    this.chargeMaxMs = 1200;
+    this.chargeMinMs = 40;
+    this.chargeMaxMultiplier = 1.8;
     this.score = 0;
     this.level = 1;
     this.comboChain = 0;
@@ -295,8 +300,11 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.scale.on('resize', this.handleResize, this);
     this.input.on('pointermove', this.handlePointerMove, this);
     this.input.on('pointerdown', this.handlePointerDown, this);
-    this.input.keyboard.on('keydown-SPACE', this.handleShootKey, this);
-    this.input.keyboard.on('keydown-ENTER', this.handleShootKey, this);
+    this.input.on('pointerup', this.handlePointerUp, this);
+    this.input.keyboard.on('keydown-SPACE', this.handleShootKeyDown, this);
+    this.input.keyboard.on('keyup-SPACE', this.handleShootKeyUp, this);
+    this.input.keyboard.on('keydown-ENTER', this.handleShootKeyDown, this);
+    this.input.keyboard.on('keyup-ENTER', this.handleShootKeyUp, this);
 
     this.handleResize({ width: this.scale.width, height: this.scale.height });
     this.resetGame(true);
@@ -605,15 +613,57 @@ class ConcreteVaultScene extends Phaser.Scene {
     }
 
     this.updateAim(pointer.worldX, pointer.worldY);
-    this.fireProjectile();
+    this.startCharge();
   }
 
   handleShootKey() {
     if (this.state !== 'playing') {
       return;
     }
+    // legacy single-key handler replaced by keydown/keyup pairing
+    this.startCharge();
+  }
 
-    this.fireProjectile();
+  handleShootKeyDown() {
+    if (this.state !== 'playing') return;
+    this.startCharge();
+  }
+
+  handleShootKeyUp() {
+    if (this.state !== 'playing') return;
+    if (this.isCharging) {
+      const now = Date.now();
+      const dur = Math.max(0, now - this.chargeStart);
+      const ratio = Math.min(1, dur / this.chargeMaxMs);
+      const multiplier = 1 + ratio * (this.chargeMaxMultiplier - 1);
+      this.releaseCharge(multiplier);
+    } else {
+      // fallback quick fire
+      this.fireProjectile(1);
+    }
+  }
+
+  handlePointerUp(pointer) {
+    if (this.state !== 'playing') return;
+    if (this.isCharging) {
+      const now = Date.now();
+      const dur = Math.max(0, now - this.chargeStart);
+      const ratio = Math.min(1, dur / this.chargeMaxMs);
+      const multiplier = 1 + ratio * (this.chargeMaxMultiplier - 1);
+      this.releaseCharge(multiplier);
+    }
+  }
+
+  startCharge() {
+    if (this.projectile) return; // already have a projectile
+    this.isCharging = true;
+    this.chargeStart = Date.now();
+  }
+
+  releaseCharge(multiplier = 1) {
+    if (!this.isCharging) return;
+    this.isCharging = false;
+    this.fireProjectile(multiplier);
   }
 
   updateAim(targetX, targetY) {
@@ -629,7 +679,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.drawAimGuide();
   }
 
-  fireProjectile() {
+  fireProjectile(powerMultiplier = 1) {
     if (this.projectile) {
       return;
     }
@@ -655,7 +705,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     };
 
     this.turnCleared = false;
-    this.projectileVelocity = this.aimDirection.clone().scale(this.projectileSpeed());
+    this.projectileVelocity = this.aimDirection.clone().scale(this.projectileSpeed() * (powerMultiplier ?? 1));
     this.audio?.shoot();
     this.shotsTaken += 1;
     this.syncHud();
@@ -683,6 +733,7 @@ class ConcreteVaultScene extends Phaser.Scene {
 
     this.flashGraphics.clear();
     this.targetGraphics.clear();
+    this.powerPulseGraphics.clear();
 
     if (this.projectile) {
       const step = delta / 1000;
@@ -716,6 +767,15 @@ class ConcreteVaultScene extends Phaser.Scene {
         this.lockProjectileToGrid(sprite.x, sprite.y, hitBubble);
         this.drawTargetPulse(time);
       }
+    }
+
+    // Draw charge indicator if charging
+    if (this.isCharging) {
+      const dur = Math.min(this.chargeMaxMs, Date.now() - this.chargeStart);
+      const ratio = Math.max(0, Math.min(1, dur / this.chargeMaxMs));
+      const radius = this.board.radius * (1 + 0.5 * ratio);
+      this.powerPulseGraphics.lineStyle(3, 0xf3d37a, 0.9);
+      this.powerPulseGraphics.strokeCircle(this.launcher.x, this.launcher.y, radius);
     }
 
     this.updateCameraMotion(delta);
