@@ -311,7 +311,6 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.input.keyboard.on('keyup-ENTER', this.handleShootKeyUp, this);
 
     this.handleResize({ width: this.scale.width, height: this.scale.height });
-    this.resetGame(true);
   }
 
   createTextures() {
