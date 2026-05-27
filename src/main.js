@@ -1198,6 +1198,20 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.flashGraphics.fillCircle(x, y, 28);
   }
 
+  findAimCollision(origin, direction, maxDistance) {
+    const step = Math.max(6, this.board.radius * 0.45);
+    const hitRadius = this.board.radius * 1.22;
+    for (let traveled = step; traveled <= maxDistance; traveled += step) {
+      const x = origin.x + direction.x * traveled;
+      const y = origin.y + direction.y * traveled;
+      const hit = this.findCollisionBubble(x, y, hitRadius);
+      if (hit) {
+        return { hit, x, y };
+      }
+    }
+    return null;
+  }
+
   drawAimGuide(time = this.time.now) {
     this.aimGraphics.clear();
     if (this.state !== 'playing' || this.projectile || !this.aimGuideEnabled) {
@@ -1208,23 +1222,37 @@ class ConcreteVaultScene extends Phaser.Scene {
     const direction = this.aimDirection.clone();
     const segmentLength = Math.max(this.scale.height, this.scale.width);
     const end = this.projectAim(origin, direction, segmentLength);
-    const targetCell = this.worldToCell(end.x, end.y);
-    const impactPoint = this.cellToWorld(targetCell.row, targetCell.col);
+    const maxDistance = Phaser.Math.Distance.Between(origin.x, origin.y, end.x, end.y);
+    const collision = this.findAimCollision(origin, direction, maxDistance);
+    let targetCell = null;
+    let impactPoint = end;
+
+    if (collision) {
+      targetCell = this.pickAttachmentCell(collision.x, collision.y, collision.hit);
+    } else {
+      targetCell = this.worldToCell(end.x, end.y);
+    }
+
+    if (targetCell) {
+      impactPoint = this.cellToWorld(targetCell.row, targetCell.col);
+    }
+
+    const guideEnd = impactPoint;
     const pulse = 0.5 + Math.sin(time * 0.0075) * 0.5;
     const impactRadius = this.board.radius * (0.72 + pulse * 0.1);
 
     this.aimGraphics.lineStyle(5, 0xf3d37a, 0.05);
-    this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
+    this.aimGraphics.lineBetween(origin.x, origin.y, guideEnd.x, guideEnd.y);
     this.aimGraphics.lineStyle(2, 0xf3d37a, 0.2);
-    this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
+    this.aimGraphics.lineBetween(origin.x, origin.y, guideEnd.x, guideEnd.y);
     this.aimGraphics.lineStyle(1, 0xfff0ba, 0.55);
-    this.aimGraphics.lineBetween(origin.x, origin.y, end.x, end.y);
+    this.aimGraphics.lineBetween(origin.x, origin.y, guideEnd.x, guideEnd.y);
     this.aimGraphics.fillStyle(0xffdf84, 0.18 + pulse * 0.08);
     this.aimGraphics.fillCircle(impactPoint.x, impactPoint.y, impactRadius * 0.82);
     this.aimGraphics.lineStyle(2, 0xffdf84, 0.36 + pulse * 0.18);
     this.aimGraphics.strokeCircle(impactPoint.x, impactPoint.y, impactRadius);
     this.aimGraphics.fillStyle(0xfff5c8, 0.58);
-    this.aimGraphics.fillCircle(end.x, end.y, 4 + pulse * 1.3);
+    this.aimGraphics.fillCircle(guideEnd.x, guideEnd.y, 4 + pulse * 1.3);
   }
 
   drawTargetPulse(time = this.time.now) {
