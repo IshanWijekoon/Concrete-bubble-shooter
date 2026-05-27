@@ -1218,6 +1218,10 @@ class ConcreteVaultScene extends Phaser.Scene {
       return;
     }
 
+    if (!this.isAiming && !this.isCharging) {
+      return;
+    }
+
     const origin = new Phaser.Math.Vector2(this.launcher.x, this.launcher.y);
     const direction = this.aimDirection.clone();
     const segmentLength = Math.max(this.scale.height, this.scale.width);
