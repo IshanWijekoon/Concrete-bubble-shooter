@@ -5,6 +5,7 @@ import photoYield from './assets/images/photo_4_2026-05-15_19-53-42.jpg?url';
 import photoCapitalAlt from './assets/images/photo_5_2026-05-15_19-53-42.jpg?url';
 import photoReserve from './assets/images/photo_6_2026-05-15_19-53-42.jpg?url';
 import popSfx from './assets/Pop.mp3?url';
+import bgMusic from './assets/bg-music.mp3?url';
 
 const Phaser = window.Phaser;
 
@@ -130,17 +131,26 @@ function hexToRgba(hex, alpha) {
 }
 
 class AudioEngine {
-  constructor(enabled = true, { popUrl } = {}) {
+  constructor(enabled = true, { popUrl, musicUrl } = {}) {
     this.enabled = enabled;
     this.context = null;
     this.popSample = popUrl ? new Audio(popUrl) : null;
+    this.musicTrack = musicUrl ? new Audio(musicUrl) : null;
     if (this.popSample) {
       this.popSample.preload = 'auto';
+    }
+    if (this.musicTrack) {
+      this.musicTrack.preload = 'auto';
+      this.musicTrack.loop = true;
+      this.musicTrack.volume = 0.45;
     }
   }
 
   setEnabled(enabled) {
     this.enabled = enabled;
+    if (!this.enabled) {
+      this.stopMusic();
+    }
   }
 
   ensureContext() {
@@ -205,6 +215,23 @@ class AudioEngine {
     const clip = this.popSample.cloneNode(true);
     clip.volume = 0.7;
     clip.play().catch(() => undefined);
+  }
+
+  startMusic() {
+    if (!this.enabled || !this.musicTrack) {
+      return;
+    }
+
+    this.musicTrack.play().catch(() => undefined);
+  }
+
+  stopMusic() {
+    if (!this.musicTrack) {
+      return;
+    }
+
+    this.musicTrack.pause();
+    this.musicTrack.currentTime = 0;
   }
 
   drop() {
@@ -1670,7 +1697,7 @@ function buildUiBridge() {
   aimGuideToggle.checked = settings.aimGuide;
   motionToggle.checked = settings.motion;
 
-  const audio = new AudioEngine(settings.sound, { popUrl: popSfx });
+  const audio = new AudioEngine(settings.sound, { popUrl: popSfx, musicUrl: bgMusic });
 
   const ui = {
     setScore(value) {
@@ -1793,6 +1820,7 @@ function buildUiBridge() {
     ui.hideGameOver();
     ui.showHud();
     audio.ensureContext();
+    audio.startMusic();
     window.concreteVaultScene?.resetGame(true);
   });
 
@@ -1809,6 +1837,7 @@ function buildUiBridge() {
     ui.hideMenu();
     ui.showHud();
     audio.ensureContext();
+    audio.startMusic();
     window.concreteVaultScene?.resetGame(true);
   });
 
@@ -1816,6 +1845,7 @@ function buildUiBridge() {
     ui.hideGameOver();
     ui.showMenu();
     ui.hideHud();
+    audio.stopMusic();
   });
 
   closeButtons.forEach((button) => {
