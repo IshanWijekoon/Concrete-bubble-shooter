@@ -76,6 +76,7 @@ button {
 .background-layers {
   z-index: 0;
   pointer-events: none;
+  background: url("./assets/images/BG.jpg") center / cover no-repeat;
 }
 
 .background-layers::before,

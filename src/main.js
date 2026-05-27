@@ -258,7 +258,7 @@ class ConcreteVaultScene extends Phaser.Scene {
     this.motionEnabled = window.concreteVaultSettings.motion;
     this.aimGuideEnabled = window.concreteVaultSettings.aimGuide;
 
-    this.cameras.main.setBackgroundColor('#050505');
+    this.cameras.main.setBackgroundColor('rgba(0, 0, 0, 0)');
     this.particles = this.add.particles(0, 0, 'spark', {
       x: { min: 0, max: this.scale.width },
       y: { min: 0, max: this.scale.height },
@@ -1801,7 +1801,8 @@ window.concreteVaultUI = ui;
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game-root',
-  backgroundColor: '#050505',
+  transparent: true,
+  backgroundColor: 'rgba(0, 0, 0, 0)',
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
