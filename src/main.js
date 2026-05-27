@@ -1831,6 +1831,7 @@ const game = new Phaser.Game({
   parent: 'game-root',
   transparent: true,
   backgroundColor: 'rgba(0, 0, 0, 0)',
+  resolution: window.devicePixelRatio || 1,
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -1839,6 +1840,7 @@ const game = new Phaser.Game({
   },
   render: {
     antialias: true,
+    antialiasGL: true,
     pixelArt: false,
     powerPreference: 'high-performance',
   },
