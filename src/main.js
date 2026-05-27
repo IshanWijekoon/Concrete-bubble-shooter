@@ -1043,7 +1043,9 @@ class ConcreteVaultScene extends Phaser.Scene {
     const pulse = group.length;
     const capitalMultiplier = this.isPowerUpActive('capitalSurge') ? 2 : 1;
     const comboMultiplier = 1 + Math.min(this.comboChain + 1, 8) * 0.14;
-    this.score += Math.round((pulse * 12 + Math.max(0, pulse - 3) * 4) * capitalMultiplier * comboMultiplier);
+    const totalGain = Math.round((pulse * 12 + Math.max(0, pulse - 3) * 4) * capitalMultiplier * comboMultiplier);
+    const perBubbleGain = Math.max(1, Math.round(totalGain / pulse));
+    this.score += totalGain;
     this.audio?.playPopSample(pulse);
     this.shakeStrength = Math.min(12, this.shakeStrength + 4 + pulse * 0.25);
     this.turnCleared = true;
@@ -1068,7 +1070,28 @@ class ConcreteVaultScene extends Phaser.Scene {
         duration: 140,
         delay: index * popDelayMs,
         ease: 'Back.easeIn',
-        onStart: () => this.audio?.playPopSample(pulse),
+        onStart: () => {
+          this.audio?.playPopSample(pulse);
+          const pointsText = this.add.text(bubble.sprite.x, bubble.sprite.y, `+${perBubbleGain}`, {
+            fontFamily: 'Orbitron, sans-serif',
+            fontSize: '18px',
+            color: '#f8ffff',
+            stroke: '#0a1112',
+            strokeThickness: 4,
+          });
+          pointsText.setOrigin(0.5);
+          pointsText.setDepth(6);
+          pointsText.setShadow(0, 2, '#0a1112', 6, true, true);
+          this.tweens.add({
+            targets: pointsText,
+            y: bubble.sprite.y - 26,
+            alpha: 0,
+            duration: 420,
+            ease: 'Sine.easeOut',
+            delay: index * popDelayMs,
+            onComplete: () => pointsText.destroy(),
+          });
+        },
         onComplete: () => bubble.sprite.destroy(),
       });
     });
