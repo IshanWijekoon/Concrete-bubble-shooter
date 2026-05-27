@@ -4,6 +4,7 @@ import photoShield from './assets/images/photo_3_2026-05-15_19-53-42.jpg?url';
 import photoYield from './assets/images/photo_4_2026-05-15_19-53-42.jpg?url';
 import photoCapitalAlt from './assets/images/photo_5_2026-05-15_19-53-42.jpg?url';
 import photoReserve from './assets/images/photo_6_2026-05-15_19-53-42.jpg?url';
+import popSfx from './assets/Pop.mp3?url';
 
 const Phaser = window.Phaser;
 
@@ -129,9 +130,13 @@ function hexToRgba(hex, alpha) {
 }
 
 class AudioEngine {
-  constructor(enabled = true) {
+  constructor(enabled = true, { popUrl } = {}) {
     this.enabled = enabled;
     this.context = null;
+    this.popSample = popUrl ? new Audio(popUrl) : null;
+    if (this.popSample) {
+      this.popSample.preload = 'auto';
+    }
   }
 
   setEnabled(enabled) {
@@ -185,6 +190,21 @@ class AudioEngine {
 
   pop(count = 1) {
     this.tone({ frequency: 520 + count * 22, duration: 0.12, type: 'sine', gain: 0.08, bend: 60 });
+  }
+
+  playPopSample(count = 1) {
+    if (!this.enabled) {
+      return;
+    }
+
+    if (!this.popSample) {
+      this.pop(count);
+      return;
+    }
+
+    const clip = this.popSample.cloneNode(true);
+    clip.volume = 0.7;
+    clip.play().catch(() => undefined);
   }
 
   drop() {
@@ -955,7 +975,7 @@ class ConcreteVaultScene extends Phaser.Scene {
   resolveMatches(startBubble) {
     const group = this.collectGroup(startBubble);
     if (group.length >= 3) {
-      this.popGroup(group);
+      this.popGroup(group, startBubble);
     }
 
     this.dropDisconnectedBubbles();
@@ -992,24 +1012,36 @@ class ConcreteVaultScene extends Phaser.Scene {
     return group;
   }
 
-  popGroup(group) {
+  popGroup(group, startBubble) {
     const pulse = group.length;
     const capitalMultiplier = this.isPowerUpActive('capitalSurge') ? 2 : 1;
     const comboMultiplier = 1 + Math.min(this.comboChain + 1, 8) * 0.14;
     this.score += Math.round((pulse * 12 + Math.max(0, pulse - 3) * 4) * capitalMultiplier * comboMultiplier);
-    this.audio?.pop(pulse);
+    this.audio?.playPopSample(pulse);
     this.shakeStrength = Math.min(12, this.shakeStrength + 4 + pulse * 0.25);
     this.turnCleared = true;
 
-    group.forEach((bubble) => {
+    const origin = startBubble?.sprite
+      ? { x: startBubble.sprite.x, y: startBubble.sprite.y }
+      : { x: this.launcher.x, y: this.launcher.y };
+    const ordered = [...group].sort((left, right) => {
+      const leftDistance = Phaser.Math.Distance.Squared(left.sprite.x, left.sprite.y, origin.x, origin.y);
+      const rightDistance = Phaser.Math.Distance.Squared(right.sprite.x, right.sprite.y, origin.x, origin.y);
+      return leftDistance - rightDistance;
+    });
+    const popDelayMs = 22;
+
+    ordered.forEach((bubble, index) => {
       this.grid[bubble.row][bubble.col] = null;
       this.bubbles = this.bubbles.filter((item) => item !== bubble);
       this.tweens.add({
         targets: bubble.sprite,
         scale: bubble.sprite.scale * 1.5,
         alpha: 0,
-        duration: 180,
+        duration: 140,
+        delay: index * popDelayMs,
         ease: 'Back.easeIn',
+        onStart: () => this.audio?.playPopSample(pulse),
         onComplete: () => bubble.sprite.destroy(),
       });
     });
@@ -1638,7 +1670,7 @@ function buildUiBridge() {
   aimGuideToggle.checked = settings.aimGuide;
   motionToggle.checked = settings.motion;
 
-  const audio = new AudioEngine(settings.sound);
+  const audio = new AudioEngine(settings.sound, { popUrl: popSfx });
 
   const ui = {
     setScore(value) {
